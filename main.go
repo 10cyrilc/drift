@@ -33,6 +33,8 @@ type RequestLog struct {
 	Headers   map[string]string `json:"headers"`
 	Body      string            `json:"body"`
 	Timestamp string            `json:"timestamp"`
+	ClientIP  string            `json:"client_ip"`
+	UserAgent string            `json:"user_agent"`
 }
 
 type ResponseLog struct {
@@ -83,6 +85,8 @@ func (t *LoggingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		URL:       req.URL.String(),
 		Headers:   make(map[string]string),
 		Timestamp: time.Now().Format(time.RFC3339),
+		ClientIP:  req.RemoteAddr,
+		UserAgent: req.Header.Get("User-Agent"),
 	}
 
 	for key, values := range req.Header {
@@ -360,7 +364,6 @@ func startZrok() {
 				line := scanner.Text()
 				fmt.Println("Zrok output:", line)
 				if strings.Contains(line, "http") && strings.Contains(line, "zrok.io") {
-
 					re := regexp.MustCompile(`https://[a-zA-Z0-9\-]+\.share\.zrok\.io`)
 					url := re.FindString(line)
 
@@ -369,7 +372,7 @@ func startZrok() {
 					zrokMu.Unlock()
 					fmt.Println("=================================================")
 					fmt.Println("Access your API Interceptor at:")
-					fmt.Println("Local URL: http://localhost:4040")
+					fmt.Println("Local URL: http://localhost:4040/inspector/dashboard")
 					fmt.Println("Public URL:", url)
 					fmt.Println("=================================================")
 					return
@@ -420,21 +423,32 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		if path == "/inspector" || path == "/inspector/" || path == "/inspector/dashboard" || path == "/inspector/dashboard/" {
-			http.ServeFileFS(w, r, staticFiles, "static/index.html")
-		} else if strings.HasPrefix(path, "/static/") {
-			http.ServeFileFS(w, r, staticFiles, path)
-		} else {
-			configMu.Lock()
-			if config == nil || config.Proxy == nil {
-				configMu.Unlock()
-				http.Error(w, "Proxy not configured", http.StatusServiceUnavailable)
+		isInspectorRoute := path == "/inspector" || path == "/inspector/" || path == "/inspector/dashboard" || path == "/inspector/dashboard/"
+
+		if isInspectorRoute {
+			host := r.Host
+			if !strings.Contains(host, "localhost") && !strings.Contains(host, "127.0.0.1") && !strings.Contains(host, "[::1]") {
+				http.Error(w, "Inspector is only accessible from localhost", http.StatusForbidden)
 				return
 			}
-			proxy := config.Proxy
-			configMu.Unlock()
-			proxy.ServeHTTP(w, r)
+			http.ServeFileFS(w, r, staticFiles, "static/index.html")
+			return
 		}
+
+		if strings.HasPrefix(path, "/static/") {
+			http.ServeFileFS(w, r, staticFiles, path)
+			return
+		}
+
+		configMu.Lock()
+		if config == nil || config.Proxy == nil {
+			configMu.Unlock()
+			http.Error(w, "Proxy not configured", http.StatusServiceUnavailable)
+			return
+		}
+		proxy := config.Proxy
+		configMu.Unlock()
+		proxy.ServeHTTP(w, r)
 	})
 
 	http.HandleFunc("/configure", configureProxy)
@@ -444,7 +458,7 @@ func main() {
 	fmt.Println("=================================================")
 	fmt.Println("Starting API Interceptor on port 4040")
 	fmt.Println("Access your API Interceptor at:")
-	fmt.Println("Local URL: http://localhost:4040")
+	fmt.Println("Local URL: http://localhost:4040/inspector")
 	fmt.Println("=================================================")
 
 	if err := http.ListenAndServe(":4040", nil); err != nil {

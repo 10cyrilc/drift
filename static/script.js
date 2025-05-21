@@ -97,6 +97,18 @@ function formatRequestDetails(log) {
           <div class="details-value">${formattedUrl}</div>
         </div>
         <div class="details-item">
+          <div class="details-label">Client IP:</div>
+          <div class="details-value">${
+            request.client_ip || "<em>Not available</em>"
+          }</div>
+        </div>
+        <div class="details-item">
+          <div class="details-label">User Agent:</div>
+          <div class="details-value">${
+            request.user_agent || "<em>Not available</em>"
+          }</div>
+        </div>
+        <div class="details-item">
           <div class="details-label">Time:</div>
           <div class="details-value">${new Date(
             request.timestamp
@@ -345,11 +357,15 @@ function setupSearch() {
       const method = requestData.request.method.toLowerCase();
       const url = requestData.request.url.toLowerCase();
       const status = requestData.response.status_code.toString();
+      const clientIp = requestData.request.client_ip?.toLowerCase() || "";
+      const userAgent = requestData.request.user_agent?.toLowerCase() || "";
 
       item.style.display =
         method.includes(searchTerm) ||
         url.includes(searchTerm) ||
-        status.includes(searchTerm)
+        status.includes(searchTerm) ||
+        clientIp.includes(searchTerm) ||
+        userAgent.includes(searchTerm)
           ? ""
           : "none";
     });
