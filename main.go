@@ -12,8 +12,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
+	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -241,7 +244,7 @@ func configureProxy(w http.ResponseWriter, r *http.Request) {
 
 	go startZrok()
 
-	http.Redirect(w, r, "/inspector", http.StatusSeeOther)
+	http.Redirect(w, r, "/inspector/dashboard", http.StatusSeeOther)
 }
 
 func updateServerStatus(backendURL *url.URL) {
@@ -290,10 +293,12 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func startZrok() {
+	// Set initial zrokURL to indicate initialization
 	zrokMu.Lock()
 	zrokURL = "Initializing Zrok tunnel..."
 	zrokMu.Unlock()
 
+	// Check if zrok is installed
 	zrokPath, err := exec.LookPath("zrok")
 	if err != nil {
 		fmt.Println("Zrok not found. Public URL will not be available.")
@@ -304,28 +309,25 @@ func startZrok() {
 	}
 	fmt.Printf("Found zrok at: %s\n", zrokPath)
 
+	// Kill any existing zrok process
 	if zrokCmd != nil && zrokCmd.Process != nil {
 		fmt.Println("Killing existing zrok process...")
 		zrokCmd.Process.Kill()
 		zrokCmd.Wait()
 	}
 
-	configMu.Lock()
-	port := "4040"
-	if config != nil && config.BackendPort != "" {
-		port = config.BackendPort
-	}
-	configMu.Unlock()
-
-	zrokArgs := []string{"share", "public", "--backend-mode", "proxy", port}
+	// Prepare the command with all arguments
+	zrokArgs := []string{"share", "public", "--backend-mode", "proxy", "4040"}
 	fmt.Printf("Running command: zrok %s\n", strings.Join(zrokArgs, " "))
 
+	// Create the command
 	cmd := exec.Command(zrokPath, zrokArgs...)
+
+	// Set up output capture
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
+	// Start the command
 	fmt.Println("Starting zrok process...")
 	if err := cmd.Start(); err != nil {
 		fmt.Printf("Failed to start zrok: %v\n", err)
@@ -335,10 +337,14 @@ func startZrok() {
 		return
 	}
 
+	// Store the command
 	zrokCmd = cmd
 
+	// Set up a cleanup handler
+	setupCleanupHandler()
+
+	// Process output
 	go func() {
-		defer cmd.Wait()
 		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
 		timeout := time.After(30 * time.Second)
 		for scanner.Scan() {
@@ -352,8 +358,12 @@ func startZrok() {
 				return
 			default:
 				line := scanner.Text()
+				fmt.Println("Zrok output:", line)
 				if strings.Contains(line, "http") && strings.Contains(line, "zrok.io") {
-					url := strings.TrimSpace(line)
+
+					re := regexp.MustCompile(`https://[a-zA-Z0-9\-]+\.share\.zrok\.io`)
+					url := re.FindString(line)
+
 					zrokMu.Lock()
 					zrokURL = url
 					zrokMu.Unlock()
@@ -372,6 +382,30 @@ func startZrok() {
 		}
 		zrokMu.Unlock()
 	}()
+
+	// Wait for the process in a separate goroutine
+	go func() {
+		err := cmd.Wait()
+		if err != nil {
+			fmt.Printf("Zrok process exited with error: %v\n", err)
+		} else {
+			fmt.Println("Zrok process exited normally")
+		}
+	}()
+}
+
+// Add a cleanup handler to kill zrok when the program exits
+func setupCleanupHandler() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("Shutting down, killing zrok process...")
+		if zrokCmd != nil && zrokCmd.Process != nil {
+			zrokCmd.Process.Kill()
+		}
+		os.Exit(0)
+	}()
 }
 
 func main() {
@@ -381,12 +415,15 @@ func main() {
 	zrokURL = "Public URL not available"
 	zrokMu.Unlock()
 
+	// Set up cleanup handler for the main process
+	setupCleanupHandler()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		if path == "/inspector" || path == "/(inspector/" || path == "/inspector/dashboard" || path == "/inspector/dashboard/" {
+		if path == "/inspector" || path == "/inspector/" || path == "/inspector/dashboard" || path == "/inspector/dashboard/" {
 			http.ServeFileFS(w, r, staticFiles, "static/index.html")
 		} else if strings.HasPrefix(path, "/static/") {
-			http.ServeFileFS(w, r, staticFiles, "static"+path)
+			http.ServeFileFS(w, r, staticFiles, path)
 		} else {
 			configMu.Lock()
 			if config == nil || config.Proxy == nil {
