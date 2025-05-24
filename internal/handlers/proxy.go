@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"embed"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -51,20 +52,38 @@ func ConfigureProxy(state *models.AppState) http.HandlerFunc {
 func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		isInspectorRoute := path == "/inspector" || path == "/inspector/" || path == "/inspector/dashboard" || path == "/inspector/dashboard/"
 
+		isInspectorRoute := path == "/inspector/configure" || path == "/inspector/configure/" ||
+			path == "/inspector/dashboard" || path == "/inspector/dashboard/" ||
+			path == "/inspector/graph" || path == "/inspector/graph/" ||
+			path == "/inspector/analytics" || path == "/inspector/analytics/"
 		if isInspectorRoute {
 			host := r.Host
 			if !strings.Contains(host, "localhost") && !strings.Contains(host, "127.0.0.1") && !strings.Contains(host, "[::1]") {
 				http.Error(w, "Inspector is only accessible from localhost", http.StatusForbidden)
 				return
 			}
-			http.ServeFileFS(w, r, staticFiles, "static/index.html")
+			if path == "/inspector/configure" || path == "/inspector/configure/" {
+				http.ServeFileFS(w, r, staticFiles, "static/landing/index.html")
+			} else if path == "/inspector/graph" || path == "/inspector/graph/" {
+
+				http.ServeFileFS(w, r, staticFiles, "static/graph/index.html")
+			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
+				http.ServeFileFS(w, r, staticFiles, "static/analytics/index.html")
+			} else {
+				http.ServeFileFS(w, r, staticFiles, "static/dashboard/index.html")
+			}
 			return
 		}
 
 		if strings.HasPrefix(path, "/static/") {
-			http.ServeFileFS(w, r, staticFiles, path)
+			filePath := strings.TrimPrefix(path, "/static/")
+			if _, err := staticFiles.Open("static/" + filePath); err == nil {
+				http.ServeFileFS(w, r, staticFiles, "static/"+filePath)
+			} else {
+				fmt.Printf("Static file not found: %s\n", filePath)
+				http.NotFound(w, r)
+			}
 			return
 		}
 
