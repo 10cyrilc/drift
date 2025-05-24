@@ -89,20 +89,43 @@ function connectWebSocket(onMessageCallback) {
   };
 }
 
+// Add loading indicator function
+function showLoading(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.classList.add("loading");
+    element.setAttribute("data-original-text", element.textContent);
+    element.textContent = "Loading...";
+  }
+}
+
+function hideLoading(elementId) {
+  const element = document.getElementById(elementId);
+  if (element && element.classList.contains("loading")) {
+    element.classList.remove("loading");
+    element.textContent = element.getAttribute("data-original-text") || "";
+  }
+}
+
 // Update status from server
 function updateStatus() {
+  showLoading("server-status");
+  showLoading("localhost-url");
+
   fetch("/status")
     .then((response) => response.json())
     .then((data) => {
       const localhostEl = document.getElementById("localhost-url");
       if (localhostEl) {
         localhostEl.textContent = `Localhost URL: ${data.localhostURL}`;
+        hideLoading("localhost-url");
       }
 
       const serverStatus = data.serverStatus;
       const statusEl = document.getElementById("server-status");
       if (statusEl) {
         statusEl.textContent = `Server Status: ${serverStatus}`;
+        hideLoading("server-status");
         if (serverStatus === "Active") {
           statusEl.classList.add("connected");
           statusEl.classList.remove("disconnected");
@@ -127,6 +150,8 @@ function updateStatus() {
     })
     .catch((error) => {
       console.error("Error fetching status:", error);
+      hideLoading("server-status");
+      hideLoading("localhost-url");
     });
 }
 

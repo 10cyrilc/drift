@@ -392,6 +392,95 @@
   font-style: italic;
 }
 
+/* Fix for details table structure */
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.details-row {
+  display: flex;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.details-row:last-child {
+  border-bottom: none;
+}
+
+/* JSON formatter and copy button styles */
+.body-container {
+  position: relative;
+  margin: 15px;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--dark-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-light);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 10;
+  transition: var(--transition-fast);
+}
+
+.copy-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.copy-btn.copied {
+  background-color: var(--success-color);
+  color: white;
+}
+
+/* JSON syntax highlighting */
+.json-formatter {
+  background-color: var(--darker-color);
+  border-radius: var(--radius-sm);
+  padding: 15px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.json-key {
+  color: #9cdcfe;
+  font-weight: bold;
+}
+
+.json-string {
+  color: #ce9178;
+}
+
+.json-number {
+  color: #b5cea8;
+}
+
+.json-boolean {
+  color: #569cd6;
+}
+
+.json-null {
+  color: #569cd6;
+}
+
+/* Section content styling */
+.section-content {
+  padding: 15px;
+  background-color: var(--dark-color);
+}
+
+/* Collapsible sections */
+.details-section.collapsed .section-content {
+  display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 992px) {
   .split-screen {
