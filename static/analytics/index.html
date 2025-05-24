@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Interceptor - Analytics</title>
+    <link rel="stylesheet" href="/static/common.css" />
+    <link rel="stylesheet" href="/static/analytics/analytics.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
+    />
+    <script src="/static/common.js"></script>
+  </head>
+  <body>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+        <span class="sidebar-title">API Interceptor</span>
+      </div>
+      <div class="sidebar-menu">
+        <a href="/inspector/dashboard" class="sidebar-item">
+          <span class="sidebar-icon">📊</span>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+        <a href="/inspector/graph" class="sidebar-item">
+          <span class="sidebar-icon">📈</span>
+          <span class="sidebar-label">Request Graph</span>
+        </a>
+        <a href="/inspector/analytics" class="sidebar-item active">
+          <span class="sidebar-icon">📉</span>
+          <span class="sidebar-label">Analytics</span>
+        </a>
+        <a href="/inspector/configure" class="sidebar-item">
+          <span class="sidebar-icon">⚙️</span>
+          <span class="sidebar-label">Configure</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="main-content" id="main-content">
+      <div id="analytics-page" class="analytics-page">
+        <div class="top-bar">
+          <div class="top-bar-left">
+            <span id="localhost-url">Localhost URL: Loading...</span>
+          </div>
+          <div class="top-bar-center">
+            <span id="server-status">Server Status: Unknown</span>
+          </div>
+          <div class="top-bar-right">
+            <span id="zrok-url">Public URL: Loading...</span>
+          </div>
+        </div>
+
+        <div class="analytics-container">
+          <h2>API Analytics</h2>
+
+          <div class="analytics-grid">
+            <div class="analytics-card">
+              <h3>Total Requests</h3>
+              <div class="analytics-value" id="total-requests">0</div>
+            </div>
+
+            <div class="analytics-card">
+              <h3>Average Response Time</h3>
+              <div class="analytics-value" id="avg-response-time">0 ms</div>
+            </div>
+
+            <div class="analytics-card">
+              <h3>Unique Visitors</h3>
+              <div class="analytics-value" id="unique-visitors">0</div>
+            </div>
+          </div>
+
+          <div class="analytics-row">
+            <div class="analytics-chart-container">
+              <h3>HTTP Methods</h3>
+              <div id="methods-chart" class="chart-container"></div>
+            </div>
+
+            <div class="analytics-chart-container">
+              <h3>Status Codes</h3>
+              <div id="status-chart" class="chart-container"></div>
+            </div>
+          </div>
+
+          <div class="analytics-row">
+            <div class="analytics-table-container">
+              <h3>Top Requested Endpoints</h3>
+              <table class="analytics-table" id="top-endpoints">
+                <thead>
+                  <tr>
+                    <th>Endpoint</th>
+                    <th>Count</th>
+                    <th>% of Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="3" class="empty-table">No data available</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="analytics-table-container">
+              <h3>Top Errors</h3>
+              <table class="analytics-table" id="top-errors">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Endpoint</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="3" class="empty-table">No data available</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/analytics/analytics.js"></script>
+  </body>
+</html>

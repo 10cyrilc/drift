@@ -1,0 +1,229 @@
+.analytics-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--darker-color);
+}
+
+.analytics-container {
+  padding: 20px;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+}
+
+.analytics-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  font-size: 24px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.analytics-card {
+  background-color: var(--dark-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.analytics-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: var(--text-light);
+}
+
+.analytics-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.analytics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.analytics-chart-container {
+  background-color: var(--dark-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.analytics-chart-container h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: var(--text-light);
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+}
+
+.analytics-table-container {
+  background-color: var(--dark-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.analytics-table-container h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: var(--text-light);
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analytics-table th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.analytics-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color-light);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.analytics-table tr:last-child td {
+  border-bottom: none;
+}
+
+.empty-table {
+  text-align: center;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* Bar chart styles */
+.bar-chart {
+  display: flex;
+  height: 100%;
+  align-items: flex-end;
+  justify-content: space-around;
+}
+
+.bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  flex: 1;
+}
+
+.bar {
+  width: 80%;
+  background-color: var(--primary-color);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height 0.5s ease;
+  position: relative;
+}
+
+.bar-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.bar-value {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+/* Method colors */
+.bar.get {
+  background-color: #61b0ff;
+}
+.bar.post {
+  background-color: #4ade80;
+}
+.bar.put {
+  background-color: #fbbf24;
+}
+.bar.delete {
+  background-color: #f87171;
+}
+.bar.patch {
+  background-color: #a78bfa;
+}
+.bar.options {
+  background-color: #60a5fa;
+}
+.bar.head {
+  background-color: #c084fc;
+}
+
+/* Status code colors */
+.bar.status-2xx {
+  background-color: #4ade80;
+}
+.bar.status-3xx {
+  background-color: #60a5fa;
+}
+.bar.status-4xx {
+  background-color: #fbbf24;
+}
+.bar.status-5xx {
+  background-color: #f87171;
+}
+
+/* Status code in table */
+.status-code {
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status-2xx {
+  background-color: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+.status-3xx {
+  background-color: rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+}
+.status-4xx {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+.status-5xx {
+  background-color: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+@media (max-width: 768px) {
+  .analytics-row {
+    grid-template-columns: 1fr;
+  }
+}

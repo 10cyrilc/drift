@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Interceptor Dashboard</title>
+    <link rel="stylesheet" href="/static/common.css" />
+    <link rel="stylesheet" href="/static/dashboard/dashboard.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
+    />
+    <script src="/static/common.js"></script>
+  </head>
+  <body>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+        <span class="sidebar-title">API Interceptor</span>
+      </div>
+      <div class="sidebar-menu">
+        <a href="/inspector/dashboard" class="sidebar-item active">
+          <span class="sidebar-icon">📊</span>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+        <a href="/inspector/graph" class="sidebar-item">
+          <span class="sidebar-icon">📈</span>
+          <span class="sidebar-label">Request Graph</span>
+        </a>
+        <a href="/inspector/analytics" class="sidebar-item">
+          <span class="sidebar-icon">📉</span>
+          <span class="sidebar-label">Analytics</span>
+        </a>
+        <a href="/inspector/configure" class="sidebar-item">
+          <span class="sidebar-icon">⚙️</span>
+          <span class="sidebar-label">Configure</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="main-content" id="main-content">
+      <div id="dashboard" class="dashboard">
+        <div class="top-bar">
+          <div class="top-bar-left">
+            <span id="localhost-url">Localhost URL: Loading...</span>
+          </div>
+          <div class="top-bar-center">
+            <span id="server-status">Server Status: Unknown</span>
+          </div>
+          <div class="top-bar-right">
+            <span id="zrok-url">Public URL: Loading...</span>
+          </div>
+        </div>
+        <div class="split-screen">
+          <div class="request-list">
+            <div class="request-list-header">
+              <h2>API Requests</h2>
+              <div class="search-container">
+                <input
+                  type="text"
+                  id="request-search"
+                  placeholder="Search requests..."
+                />
+              </div>
+            </div>
+            <div class="request-list-actions">
+              <button id="clear-requests" title="Clear all requests">
+                Clear All
+              </button>
+              <div class="method-filter">
+                <button class="filter-btn active" data-method="all">All</button>
+                <button class="filter-btn" data-method="get">GET</button>
+                <button class="filter-btn" data-method="post">POST</button>
+                <button class="filter-btn" data-method="put">PUT</button>
+                <button class="filter-btn" data-method="delete">DEL</button>
+              </div>
+            </div>
+            <ul id="requests"></ul>
+            <div class="empty-state" id="empty-requests">
+              <div class="empty-icon">📥</div>
+              <div class="empty-text">No requests yet</div>
+              <div class="empty-subtext">
+                Make API calls to your server to see them here
+              </div>
+            </div>
+          </div>
+          <div class="request-details">
+            <h2>Request Details</h2>
+            <div id="details" class="details-placeholder">
+              <div class="empty-state">
+                <div class="empty-icon">👈</div>
+                <div class="empty-text">Select a request to view details</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/dashboard/dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Interceptor - Configure</title>
+    <link rel="stylesheet" href="/static/common.css" />
+    <link rel="stylesheet" href="/static/landing/landing.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
+    />
+  </head>
+  <body class="configure-page">
+    <div class="container">
+      <h1>API Interceptor</h1>
+      <form id="port-form" action="/configure" method="POST">
+        <label for="port">Enter Backend Port:</label>
+        <input
+          type="number"
+          id="port"
+          name="port"
+          placeholder="e.g. 3000"
+          required
+        />
+        <button type="submit">Start Intercepting</button>
+      </form>
+    </div>
+    <script src="/static/landing/landing.js"></script>
+  </body>
+</html>
