@@ -97,9 +97,20 @@ function addRequestToUI(log) {
     path = log.request.url;
   }
 
+  // Handle unknown method
+  const method = log.request.method || "UNKNOWN";
+  const methodClass = ["get", "post", "put", "delete", "patch"].includes(
+    method.toLowerCase()
+  )
+    ? method.toLowerCase()
+    : "unknown";
+
   requestItem.innerHTML = `
     <div class="request-list-content">
-      <div class="request-path">${path}</div>
+      <div class="request-path">
+        <span class="method method-${methodClass}">${method}</span>
+        ${path}
+      </div>
       <div class="request-time">${formattedTime}</div>
     </div>
     <span class="request-status status-${statusClass}">${statusCode}</span>
@@ -174,6 +185,14 @@ function displayRequestDetails(log) {
 
   const request = log.request;
   const response = log.response;
+
+  // Handle unknown method
+  const method = request.method || "UNKNOWN";
+  const methodClass = ["get", "post", "put", "delete", "patch"].includes(
+    method.toLowerCase()
+  )
+    ? method.toLowerCase()
+    : "unknown";
 
   // Format headers using the same structure as overview
   let requestHeadersContent =
@@ -286,9 +305,7 @@ function displayRequestDetails(log) {
         <div class="details-table">
           <div class="details-row">
             <div class="details-label">Method</div>
-            <div class="details-value method-${request.method.toLowerCase()}">${
-    request.method
-  }</div>
+            <div class="details-value method-${methodClass}">${method}</div>
           </div>
           <div class="details-row">
             <div class="details-label">URL</div>
