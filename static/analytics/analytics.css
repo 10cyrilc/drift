@@ -227,3 +227,60 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Add graph-related styles */
+.full-width {
+  width: 100%;
+}
+
+.time-filter {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background-color: var(--dark-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.filter-btn:hover {
+  background-color: var(--light-color);
+}
+
+.filter-btn.active {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+#request-chart-container {
+  width: 98.5%;
+  height: 400px;
+  background-color: var(--darker-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+  padding: 10px;
+}
+
+.empty-chart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Remove any SVG-specific styles that are no longer needed */

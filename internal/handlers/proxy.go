@@ -55,7 +55,6 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 
 		isInspectorRoute := path == "/inspector/configure" || path == "/inspector/configure/" ||
 			path == "/inspector/dashboard" || path == "/inspector/dashboard/" ||
-			path == "/inspector/graph" || path == "/inspector/graph/" ||
 			path == "/inspector/analytics" || path == "/inspector/analytics/"
 		if isInspectorRoute {
 			host := r.Host
@@ -65,9 +64,6 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 			}
 			if path == "/inspector/configure" || path == "/inspector/configure/" {
 				http.ServeFileFS(w, r, staticFiles, "static/landing/index.html")
-			} else if path == "/inspector/graph" || path == "/inspector/graph/" {
-
-				http.ServeFileFS(w, r, staticFiles, "static/graph/index.html")
 			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
 				http.ServeFileFS(w, r, staticFiles, "static/analytics/index.html")
 			} else {

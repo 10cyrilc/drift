@@ -11,6 +11,9 @@
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
     />
     <script src="/static/common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
   </head>
   <body>
     <div class="sidebar" id="sidebar">
@@ -22,10 +25,6 @@
         <a href="/inspector/dashboard" class="sidebar-item">
           <span class="sidebar-icon">📊</span>
           <span class="sidebar-label">Dashboard</span>
-        </a>
-        <a href="/inspector/graph" class="sidebar-item">
-          <span class="sidebar-icon">📈</span>
-          <span class="sidebar-label">Request Graph</span>
         </a>
         <a href="/inspector/analytics" class="sidebar-item active">
           <span class="sidebar-icon">📉</span>
@@ -123,9 +122,27 @@
               </table>
             </div>
           </div>
+          <!-- Add graph section at the top -->
+          <div class="analytics-row">
+            <div class="analytics-chart-container">
+              <h3>Requests Over Time</h3>
+              <div class="time-filter">
+                <button class="filter-btn" data-time="1m">1 Min</button>
+                <button class="filter-btn" data-time="5m">5 Min</button>
+                <button class="filter-btn" data-time="10m">10 Min</button>
+                <button class="filter-btn" data-time="30m">30 Min</button>
+                <button class="filter-btn active" data-time="1h">1 Hour</button>
+                <button class="filter-btn" data-time="6h">6 Hours</button>
+                <button class="filter-btn" data-time="12h">12 Hours</button>
+                <button class="filter-btn" data-time="24h">24 Hours</button>
+              </div>
+              <div id="request-chart-container"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+    <!-- Remove D3.js library -->
     <script src="/static/analytics/analytics.js"></script>
   </body>
 </html>
