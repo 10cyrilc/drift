@@ -252,6 +252,7 @@ body {
   text-decoration: none;
   transition: var(--transition);
   white-space: nowrap;
+  position: relative; /* Add this for tooltip positioning */
 }
 
 .sidebar-item:hover {
@@ -279,6 +280,73 @@ body {
 
 .sidebar.expanded .sidebar-label {
   opacity: 1;
+}
+
+/* Add custom tooltip styles */
+.sidebar-tooltip {
+  position: fixed;
+  background-color: var(--dark-color);
+  color: var(--text-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* Add a small arrow to the tooltip */
+.sidebar-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background-color: var(--dark-color);
+  border-left: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Improve tooltip visibility */
+.sidebar:not(.expanded) .sidebar-item:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 60px; /* Fixed position based on collapsed sidebar width */
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--dark-color);
+  color: var(--text-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 1000; /* Higher z-index to ensure visibility */
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  pointer-events: none; /* Prevents tooltip from interfering with hover */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Add a small arrow to the tooltip */
+.sidebar:not(.expanded) .sidebar-item:hover::before {
+  content: "";
+  position: absolute;
+  left: 60px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background-color: var(--dark-color);
+  border-left: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 1001;
+  pointer-events: none;
 }
 
 /* Main content area */

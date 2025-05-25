@@ -99,7 +99,7 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition);
-  color: var(--text-light);
+  color: var(--primary-dark);
 }
 
 .filter-btn:hover {
@@ -122,6 +122,10 @@
 
 .filter-btn[data-method="put"] {
   color: #fbbf24;
+}
+
+.filter-btn[data-method="patch"] {
+  color: #c084fc;
 }
 
 .filter-btn[data-method="delete"] {

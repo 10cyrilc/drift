@@ -161,6 +161,7 @@ function setupSidebar() {
   const mainContent = document.getElementById("main-content");
   const sidebarToggle = document.getElementById("sidebar-toggle");
   const sidebarOverlay = document.getElementById("sidebar-overlay");
+  const sidebarItems = document.querySelectorAll(".sidebar-item");
 
   if (!sidebar || !mainContent || !sidebarToggle || !sidebarOverlay) return;
 
@@ -170,6 +171,32 @@ function setupSidebar() {
     sidebar.classList.add("expanded");
     mainContent.classList.add("sidebar-expanded");
   }
+
+  // Setup tooltips for sidebar items
+  sidebarItems.forEach((item) => {
+    const tooltip = item.getAttribute("data-tooltip");
+    if (tooltip) {
+      item.addEventListener("mouseenter", () => {
+        if (!sidebar.classList.contains("expanded")) {
+          const tooltipEl = document.createElement("div");
+          tooltipEl.className = "sidebar-tooltip";
+          tooltipEl.textContent = tooltip;
+
+          // Position the tooltip
+          const rect = item.getBoundingClientRect();
+          tooltipEl.style.top = `${rect.top + rect.height / 2}px`;
+          tooltipEl.style.left = `${rect.right + 10}px`;
+
+          document.body.appendChild(tooltipEl);
+        }
+      });
+
+      item.addEventListener("mouseleave", () => {
+        const tooltips = document.querySelectorAll(".sidebar-tooltip");
+        tooltips.forEach((el) => el.remove());
+      });
+    }
+  });
 
   sidebarToggle.addEventListener("click", () => {
     sidebar.classList.toggle("expanded");
@@ -188,6 +215,10 @@ function setupSidebar() {
         sidebar.classList.contains("expanded")
       );
     }
+
+    // Remove any tooltips when expanding/collapsing
+    const tooltips = document.querySelectorAll(".sidebar-tooltip");
+    tooltips.forEach((el) => el.remove());
   });
 
   // Close sidebar when clicking on overlay (mobile only)
