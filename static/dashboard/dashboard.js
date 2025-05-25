@@ -63,6 +63,33 @@ function toggleEmptyState() {
   }
 }
 
+// Format relative time (e.g., "2 minutes ago")
+function formatRelativeTime(timestamp) {
+  const now = new Date();
+  const requestTime = new Date(timestamp);
+  const diffMs = now - requestTime;
+
+  // If more than 5 minutes, return the regular time format
+  if (diffMs > 5 * 60 * 1000) {
+    const hours = requestTime.getHours().toString().padStart(2, "0");
+    const minutes = requestTime.getMinutes().toString().padStart(2, "0");
+    const seconds = requestTime.getSeconds().toString().padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  // Otherwise, show relative time
+  const diffSeconds = Math.floor(diffMs / 1000);
+
+  if (diffSeconds < 5) {
+    return "just now";
+  } else if (diffSeconds < 60) {
+    return `${diffSeconds} seconds ago`;
+  } else {
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    return diffMinutes === 1 ? "1 minute ago" : `${diffMinutes} minutes ago`;
+  }
+}
+
 // Add request to UI
 function addRequestToUI(log) {
   console.log("Dashboard: Adding request to UI:", log.request.id);
@@ -72,6 +99,7 @@ function addRequestToUI(log) {
   const requestItem = document.createElement("li");
   requestItem.dataset.id = log.request.id;
   requestItem.dataset.method = log.request.method.toLowerCase();
+  requestItem.dataset.timestamp = log.request.timestamp; // Store timestamp for updates
 
   // Get status code class
   const statusCode = log.response.status_code;
@@ -82,11 +110,7 @@ function addRequestToUI(log) {
   else if (statusCode >= 500) statusClass = "5xx";
 
   // Format timestamp
-  const timestamp = new Date(log.request.timestamp);
-  const hours = timestamp.getHours().toString().padStart(2, "0");
-  const minutes = timestamp.getMinutes().toString().padStart(2, "0");
-  const seconds = timestamp.getSeconds().toString().padStart(2, "0");
-  const formattedTime = `${hours}:${minutes}:${seconds}`;
+  const formattedTime = formatRelativeTime(log.request.timestamp);
 
   // Get URL path
   let path;
@@ -111,7 +135,7 @@ function addRequestToUI(log) {
         <span class="method method-${methodClass}">${method}</span>
         ${path}
       </div>
-      <div class="request-time">${formattedTime}</div>
+      <div class="request-time" data-timestamp="${log.request.timestamp}">${formattedTime}</div>
     </div>
     <span class="request-status status-${statusClass}">${statusCode}</span>
   `;
@@ -510,6 +534,20 @@ function setupDetailToggles() {
   });
 }
 
+// Update relative timestamps
+function updateRelativeTimestamps() {
+  const timeElements = document.querySelectorAll(
+    ".request-time[data-timestamp]"
+  );
+
+  timeElements.forEach((element) => {
+    const timestamp = element.getAttribute("data-timestamp");
+    if (timestamp) {
+      element.textContent = formatRelativeTime(timestamp);
+    }
+  });
+}
+
 // Initialize everything when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Dashboard: DOM loaded, initializing dashboard");
@@ -525,6 +563,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setupRequestFilters();
   setupClearRequests();
   setupDetailToggles();
+
+  // Start timer to update relative timestamps
+  setInterval(updateRelativeTimestamps, 30000); // Update every 30 seconds
 
   console.log("Dashboard: Initialization complete");
 });
