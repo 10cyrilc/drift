@@ -19,12 +19,7 @@ function connectWebSocket(onMessageCallback) {
   commonWs.onopen = function () {
     console.log("WebSocket connected successfully");
     reconnectAttempts = 0;
-    const statusEl = document.getElementById("server-status");
-    if (statusEl) {
-      statusEl.textContent = "Server Status: Connected";
-      statusEl.classList.add("connected");
-      statusEl.classList.remove("disconnected");
-    }
+    // Don't update server status here - let the status API handle it
   };
 
   commonWs.onmessage = function (event) {
@@ -103,7 +98,7 @@ function hideLoading(elementId) {
   const element = document.getElementById(elementId);
   if (element && element.classList.contains("loading")) {
     element.classList.remove("loading");
-    element.textContent = element.getAttribute("data-original-text") || "";
+    // Don't restore original text as we've already set the new text
   }
 }
 
@@ -111,6 +106,7 @@ function hideLoading(elementId) {
 function updateStatus() {
   showLoading("server-status");
   showLoading("localhost-url");
+  showLoading("zrok-url");
 
   fetch("/status")
     .then((response) => response.json())
@@ -122,6 +118,7 @@ function updateStatus() {
       }
 
       const serverStatus = data.serverStatus;
+      console.log(serverStatus);
       const statusEl = document.getElementById("server-status");
       if (statusEl) {
         statusEl.textContent = `Server Status: ${serverStatus}`;
@@ -135,23 +132,23 @@ function updateStatus() {
         }
       }
 
-      const zrokElement = document.getElementById("zrok-url");
-      if (zrokElement) {
-        if (data.zrokURL && data.zrokURL.includes("http")) {
-          zrokElement.innerHTML = `Public URL: <a href="${data.zrokURL}" target="_blank">${data.zrokURL}</a>`;
-          zrokElement.classList.add("has-url");
+      const zrokEl = document.getElementById("zrok-url");
+      if (zrokEl) {
+        if (data.zrokURL && data.zrokURL.startsWith("http")) {
+          zrokEl.innerHTML = `Public URL: <a href="${data.zrokURL}" target="_blank">${data.zrokURL}</a>`;
+          zrokEl.classList.add("has-url");
         } else {
-          zrokElement.textContent = `Public URL: ${
-            data.zrokURL || "Not available"
-          }`;
-          zrokElement.classList.remove("has-url");
+          zrokEl.textContent = `Public URL: ${data.zrokURL || "Not available"}`;
+          zrokEl.classList.remove("has-url");
         }
+        hideLoading("zrok-url");
       }
     })
     .catch((error) => {
       console.error("Error fetching status:", error);
       hideLoading("server-status");
       hideLoading("localhost-url");
+      hideLoading("zrok-url");
     });
 }
 
@@ -249,16 +246,16 @@ function initializeTopBar() {
 
   // Set initial values
   if (serverStatusEl) {
-    serverStatusEl.textContent = "Server Status: Connecting...";
+    serverStatusEl.textContent = "Server Status: Checking...";
     serverStatusEl.classList.remove("connected", "disconnected");
   }
 
   if (localhostUrlEl) {
-    localhostUrlEl.textContent = "Localhost URL: Loading...";
+    localhostUrlEl.textContent = "Localhost URL: Checking...";
   }
 
   if (zrokUrlEl) {
-    zrokUrlEl.textContent = "Public URL: Loading...";
+    zrokUrlEl.textContent = "Public URL: Checking...";
     zrokUrlEl.classList.remove("has-url");
   }
 
