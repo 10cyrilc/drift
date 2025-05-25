@@ -299,6 +299,11 @@ function displayRequestDetails(log) {
   else if (response.status_code >= 500) statusClass = "5xx";
 
   detailsContainer.innerHTML = `
+    <div class="details-actions">
+      <button id="replay-request" class="action-btn">Replay Request</button>
+      <button id="edit-and-replay" class="action-btn">Edit & Replay</button>
+    </div>
+    
     <div class="details-section">
       <div class="section-title">Overview</div>
       <div class="section-content">
@@ -378,6 +383,15 @@ function displayRequestDetails(log) {
       </div>
     </div>
   `;
+
+  // Add event listeners for replay buttons
+  document.getElementById("replay-request").addEventListener("click", () => {
+    replayRequest(log, false);
+  });
+
+  document.getElementById("edit-and-replay").addEventListener("click", () => {
+    replayRequest(log, true);
+  });
 
   // Add event listeners for copy buttons
   document.querySelectorAll(".copy-btn").forEach((btn) => {
@@ -514,3 +528,236 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("Dashboard: Initialization complete");
 });
+
+// Replay a request
+function replayRequest(log, editMode) {
+  if (editMode) {
+    showRequestEditor(log);
+  } else {
+    executeRequest(log.request);
+  }
+}
+
+// Show request editor modal
+function showRequestEditor(log) {
+  // Create modal container
+  const modal = document.createElement("div");
+  modal.className = "request-editor-modal";
+
+  // Format request body for editing
+  let bodyContent = "";
+  let contentType = "";
+
+  if (log.request.headers && log.request.headers["Content-Type"]) {
+    contentType = log.request.headers["Content-Type"];
+  }
+
+  if (log.request.body) {
+    if (contentType.includes("application/json")) {
+      try {
+        const jsonObj =
+          typeof log.request.body === "string"
+            ? JSON.parse(log.request.body)
+            : log.request.body;
+        bodyContent = JSON.stringify(jsonObj, null, 2);
+      } catch (e) {
+        bodyContent = log.request.body;
+      }
+    } else {
+      bodyContent = log.request.body;
+    }
+  }
+
+  // Create modal content
+  modal.innerHTML = `
+    <div class="request-editor">
+      <div class="editor-header">
+        <h3>Edit Request</h3>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="editor-content">
+        <div class="editor-row">
+          <label>Method:</label>
+          <select id="edit-method">
+            <option value="GET" ${
+              log.request.method === "GET" ? "selected" : ""
+            }>GET</option>
+            <option value="POST" ${
+              log.request.method === "POST" ? "selected" : ""
+            }>POST</option>
+            <option value="PUT" ${
+              log.request.method === "PUT" ? "selected" : ""
+            }>PUT</option>
+            <option value="DELETE" ${
+              log.request.method === "DELETE" ? "selected" : ""
+            }>DELETE</option>
+            <option value="PATCH" ${
+              log.request.method === "PATCH" ? "selected" : ""
+            }>PATCH</option>
+          </select>
+        </div>
+        <div class="editor-row">
+          <label>URL:</label>
+          <input type="text" id="edit-url" value="${log.request.url}">
+        </div>
+        <div class="editor-row">
+          <label>Headers:</label>
+          <textarea id="edit-headers" rows="5">${formatHeadersForEdit(
+            log.request.headers
+          )}</textarea>
+        </div>
+        <div class="editor-row">
+          <label>Body:</label>
+          <textarea id="edit-body" rows="10">${bodyContent}</textarea>
+        </div>
+        <div class="editor-actions">
+          <button id="send-request" class="action-btn">Send Request</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add modal to document
+  document.body.appendChild(modal);
+
+  // Add event listeners
+  modal.querySelector(".close-btn").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+
+  modal.querySelector("#send-request").addEventListener("click", () => {
+    const editedRequest = {
+      id: log.request.id,
+      method: document.getElementById("edit-method").value,
+      url: document.getElementById("edit-url").value,
+      headers: parseHeadersFromEdit(
+        document.getElementById("edit-headers").value
+      ),
+      body: document.getElementById("edit-body").value,
+      timestamp: new Date().toISOString(),
+      client_ip: log.request.client_ip,
+      user_agent: log.request.user_agent,
+    };
+
+    document.body.removeChild(modal);
+    executeRequest(editedRequest);
+  });
+}
+
+// Format headers for editing
+function formatHeadersForEdit(headers) {
+  if (!headers) return "";
+
+  return Object.entries(headers)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\n");
+}
+
+// Parse headers from edit format
+function parseHeadersFromEdit(headersText) {
+  if (!headersText) return {};
+
+  const headers = {};
+  headersText.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split(":");
+    if (key && valueParts.length) {
+      headers[key.trim()] = valueParts.join(":").trim();
+    }
+  });
+
+  return headers;
+}
+
+// Execute the request
+function executeRequest(request) {
+  console.log("Replaying request:", request);
+
+  // Create fetch options
+  const options = {
+    method: request.method,
+    headers: request.headers || {},
+  };
+
+  // Add body for non-GET requests
+  if (request.method !== "GET" && request.body) {
+    options.body = request.body;
+  }
+
+  // Show loading indicator
+  const notification = document.createElement("div");
+  notification.className = "notification";
+  notification.textContent = "Sending request...";
+  document.body.appendChild(notification);
+
+  // Get the original URL
+  let originalUrl;
+  try {
+    originalUrl = new URL(request.url);
+  } catch (e) {
+    console.error("Invalid URL:", request.url);
+    notification.textContent = `Error: Invalid URL - ${request.url}`;
+    notification.classList.add("error");
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 5000);
+    return;
+  }
+
+  // Create a proxy URL that keeps the path and query parameters but uses the current host
+  // This ensures the request goes through our proxy
+  const currentHost = window.location.host; // e.g., "localhost:4040"
+  const currentProtocol = window.location.protocol; // e.g., "http:"
+
+  // Keep the original path and query string
+  const proxyUrl = `${currentProtocol}//${currentHost}${originalUrl.pathname}${originalUrl.search}`;
+
+  console.log(
+    `Redirecting request from ${request.url} to proxy URL: ${proxyUrl}`
+  );
+
+  // Execute the request through our proxy
+  fetch(proxyUrl, options)
+    .then((response) => {
+      // Read response headers
+      const headers = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+
+      // Read response body
+      return response.text().then((text) => {
+        return {
+          status: response.status,
+          statusText: response.statusText,
+          headers: headers,
+          body: text,
+        };
+      });
+    })
+    .then((responseData) => {
+      console.log("Response received:", responseData);
+      notification.textContent = `Request completed: ${responseData.status} ${responseData.statusText}`;
+      notification.classList.add("success");
+
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 3000);
+    })
+    .catch((error) => {
+      console.error("Error replaying request:", error);
+      notification.textContent = `Error: ${error.message}`;
+      notification.classList.add("error");
+
+      // Remove notification after 5 seconds
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 5000);
+    });
+}
