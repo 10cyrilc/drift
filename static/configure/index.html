@@ -28,16 +28,18 @@
           <h3>Zrok Tunnel Options</h3>
 
           <div class="option">
-            <input
-              type="radio"
-              id="zrok-auto"
-              name="zrok_option"
-              value="auto"
-              checked
-            />
-            <label for="zrok-auto"
-              >Automatic (use existing or create new)</label
-            >
+            <div class="radio-container">
+              <input
+                type="radio"
+                id="zrok-auto"
+                name="zrok_option"
+                value="auto"
+                checked
+              />
+              <label for="zrok-auto"
+                >Automatic (use existing or create new)</label
+              >
+            </div>
             <span class="help-text"
               >Uses your existing reserved URL if available, or creates a new
               one</span
@@ -45,13 +47,18 @@
           </div>
 
           <div class="option">
-            <input
-              type="radio"
-              id="zrok-custom"
-              name="zrok_option"
-              value="custom"
-            />
-            <label for="zrok-custom">Use specific reserved token</label>
+            <div class="radio-container">
+              <input
+                type="radio"
+                id="zrok-custom"
+                name="zrok_option"
+                value="custom"
+              />
+              <label for="zrok-custom">Use specific reserved token</label>
+            </div>
+            <span class="help-text"
+              >If you have a specific token you want to use, enter it here</span
+            >
 
             <div class="token-inputs">
               <input

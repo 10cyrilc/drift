@@ -83,14 +83,12 @@ button:disabled {
 .zrok-options {
   background-color: var(--dark-color);
   border-radius: var(--radius-md);
-  padding: 20px;
-  margin-bottom: 25px;
+  padding: 10px;
   border: 1px solid var(--border-color);
 }
 
 .zrok-options h3 {
   margin-top: 0;
-  margin-bottom: 20px;
   font-size: 18px;
   color: var(--text-color);
   text-align: center;
@@ -100,10 +98,15 @@ button:disabled {
 .option {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 16px;
+  flex-direction: column;
   padding: 12px;
   border-radius: var(--radius-sm);
   transition: var(--transition);
+}
+
+.radio-container {
+  display: flex;
+  align-items: center;
 }
 
 .option:hover {
@@ -125,12 +128,11 @@ button:disabled {
 
 .token-inputs {
   margin-top: 12px;
-  margin-left: 28px;
   width: 100%;
 }
 
 .token-inputs input {
-  width: 100%;
+  width: 90%;
   margin-bottom: 10px;
   background-color: var(--darker-color);
   border: 1px solid var(--border-color);
