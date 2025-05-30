@@ -1,5 +1,26 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("port-form");
+  const tokenInput = document.getElementById("zrok_token");
+  const portInput = document.getElementById("zrok_port");
+  const tokenInputs = document.querySelector(".token-inputs");
+  const radioButtons = document.querySelectorAll('input[name="zrok_option"]');
+
+  // Initially hide the token inputs
+  tokenInputs.style.display = "none";
+
+  radioButtons.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      const isCustom = radio.value === "custom";
+      tokenInput.disabled = !isCustom;
+      portInput.disabled = !isCustom;
+      tokenInputs.style.display = isCustom ? "block" : "none";
+
+      if (isCustom) {
+        tokenInput.focus();
+      }
+    });
+  });
+
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -9,30 +30,24 @@ document.addEventListener("DOMContentLoaded", () => {
       button.textContent = "Connecting...";
       button.disabled = true;
 
-      // Clear all localStorage and sessionStorage data
-      localStorage.clear();
-      sessionStorage.clear();
-
       fetch(form.action, {
         method: form.method,
         body: formData,
       })
         .then((response) => {
-          if (response.redirected) {
-            window.location.href = response.url;
+          if (response.ok) {
+            sessionStorage.clear();
+            window.location.href = "/inspector/dashboard";
           } else {
-            button.textContent = originalText;
-            button.disabled = false;
-            alert(
-              "Failed to configure proxy. Please check the port and try again."
-            );
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
           }
         })
         .catch((error) => {
-          console.error("Error submitting form:", error);
+          alert("Error: " + error.message);
           button.textContent = originalText;
           button.disabled = false;
-          alert("An error occurred while configuring the proxy.");
         });
     });
   }

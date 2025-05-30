@@ -17,7 +17,7 @@ func Start(state *models.AppState, staticFiles embed.FS, port string) error {
 
 	// Set up HTTP routes
 	http.HandleFunc("/", handlers.HandleHTTPRequest(state, staticFiles))
-	http.HandleFunc("/configure", handlers.ConfigureProxy(state))
+	http.HandleFunc("/configure", handlers.ConfigureProxy(state, port))
 	http.HandleFunc("/ws", handlers.HandleWebSocket(state))
 	http.HandleFunc("/status", handlers.GetStatus(state))
 

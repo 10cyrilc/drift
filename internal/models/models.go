@@ -40,6 +40,9 @@ type ProxyConfig struct {
 	BackendURL  *url.URL
 	Proxy       *httputil.ReverseProxy
 	BackendPort string
+	ZrokToken   string
+	ZrokURL     string
+	ZrokPort    string
 }
 
 // AppState holds the global application state

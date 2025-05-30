@@ -23,9 +23,88 @@
           placeholder="e.g. 3000"
           required
         />
+
+        <div class="zrok-options">
+          <h3>Zrok Tunnel Options</h3>
+
+          <div class="option">
+            <input
+              type="radio"
+              id="zrok-auto"
+              name="zrok_option"
+              value="auto"
+              checked
+            />
+            <label for="zrok-auto"
+              >Automatic (use existing or create new)</label
+            >
+            <span class="help-text"
+              >Uses your existing reserved URL if available, or creates a new
+              one</span
+            >
+          </div>
+
+          <div class="option">
+            <input
+              type="radio"
+              id="zrok-custom"
+              name="zrok_option"
+              value="custom"
+            />
+            <label for="zrok-custom">Use specific reserved token</label>
+
+            <div class="token-inputs">
+              <input
+                type="text"
+                id="zrok_token"
+                name="zrok_token"
+                placeholder="e.g. w1lowggzejo3"
+                disabled
+              />
+              <input
+                type="number"
+                id="zrok_port"
+                name="zrok_port"
+                placeholder="API Interceptor port (e.g. 4040)"
+                disabled
+              />
+              <span class="help-text"
+                >Enter the API Interceptor port you used when creating this
+                token (usually 4040)</span
+              >
+            </div>
+          </div>
+        </div>
+
         <button type="submit">Start Intercepting</button>
       </form>
     </div>
     <script src="/static/landing/landing.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const tokenInput = document.getElementById("zrok_token");
+        const portInput = document.getElementById("zrok_port");
+        const tokenInputs = document.querySelector(".token-inputs");
+        const radioButtons = document.querySelectorAll(
+          'input[name="zrok_option"]'
+        );
+
+        // Initially hide the token inputs
+        tokenInputs.style.display = "none";
+
+        radioButtons.forEach((radio) => {
+          radio.addEventListener("change", () => {
+            const isExisting = radio.value === "custom";
+            tokenInput.disabled = !isExisting;
+            portInput.disabled = !isExisting;
+            tokenInputs.style.display = isExisting ? "block" : "none";
+
+            if (isExisting) {
+              tokenInput.focus();
+            }
+          });
+        });
+      });
+    </script>
   </body>
 </html>

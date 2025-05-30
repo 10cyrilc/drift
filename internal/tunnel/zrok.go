@@ -15,6 +15,54 @@ import (
 	"api-interceptor/internal/models"
 )
 
+// ReserveZrokToken reserves a new zrok share token for a specific port
+func ReserveZrokToken(port string) (string, string, error) {
+	zrokPath, err := exec.LookPath("zrok")
+	if err != nil {
+		return "", "", fmt.Errorf("zrok not found: %v", err)
+	}
+
+	cmd := exec.Command(zrokPath, "reserve", "public", "--backend-mode", "proxy", port)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to reserve zrok token: %v, output: %s", err, output)
+	}
+
+	// Parse the output to extract the token and URL
+	outputStr := string(output)
+	tokenRegex := regexp.MustCompile(`your reserved share token is '([^']+)'`)
+	urlRegex := regexp.MustCompile(`reserved frontend endpoint: (https://[^\s]+)`)
+
+	tokenMatch := tokenRegex.FindStringSubmatch(outputStr)
+	urlMatch := urlRegex.FindStringSubmatch(outputStr)
+
+	if len(tokenMatch) < 2 || len(urlMatch) < 2 {
+		return "", "", fmt.Errorf("failed to parse zrok reserve output")
+	}
+
+	return tokenMatch[1], urlMatch[1], nil
+}
+
+// ReleaseZrokToken releases a reserved zrok token
+func ReleaseZrokToken(token string) error {
+	if token == "" {
+		return nil // No token to release
+	}
+
+	zrokPath, err := exec.LookPath("zrok")
+	if err != nil {
+		return fmt.Errorf("zrok not found: %v", err)
+	}
+
+	cmd := exec.Command(zrokPath, "release", token)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to release zrok token: %v, output: %s", err, output)
+	}
+
+	return nil
+}
+
 // StartZrok starts a zrok tunnel for public access
 func StartZrok(state *models.AppState, port string) {
 	// Set initial zrokURL to indicate initialization
@@ -43,12 +91,33 @@ func StartZrok(state *models.AppState, port string) {
 	}
 	state.ZrokCmd.Unlock()
 
-	// Prepare the command with all arguments
-	zrokArgs := []string{"share", "public", "--backend-mode", "proxy", port}
+	// Get the reserved token
+	state.ConfigMu.Lock()
+	reservedToken := state.Config.ZrokToken
+	tokenPort := state.Config.ZrokPort
+	state.ConfigMu.Unlock()
 
-	// Create the command
-	cmd := exec.Command(zrokPath, zrokArgs...)
+	// Check if we have a valid token
+	if reservedToken == "" {
+		fmt.Println("No reserved token available, using random public share")
+		cmd := exec.Command(zrokPath, "share", "public", "--backend-mode", "proxy", port)
+		startZrokProcess(cmd, state, port)
+		return
+	}
 
+	// Check if the token is for the current port
+	if tokenPort != port {
+		fmt.Printf("Warning: Token %s was created for port %s but current port is %s\n",
+			reservedToken, tokenPort, port)
+	}
+
+	// Create the command for reserved token
+	cmd := exec.Command(zrokPath, "share", "reserved", reservedToken)
+	fmt.Println("Using reserved zrok token:", reservedToken)
+	startZrokProcess(cmd, state, port)
+}
+
+func startZrokProcess(cmd *exec.Cmd, state *models.AppState, port string) {
 	// Set up output capture
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -124,7 +193,9 @@ func SetupCleanupHandler(state *models.AppState) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Println("Shutting down, killing zrok process...")
+		fmt.Println("Shutting down, cleaning up resources...")
+
+		// Kill zrok process
 		state.ZrokCmd.Lock()
 		if state.ZrokProcess != nil {
 			if process, ok := state.ZrokProcess.(*exec.Cmd); ok && process.Process != nil {
@@ -132,6 +203,21 @@ func SetupCleanupHandler(state *models.AppState) {
 			}
 		}
 		state.ZrokCmd.Unlock()
+
+		// Release the reserved token
+		state.ConfigMu.Lock()
+		token := state.Config.ZrokToken
+		state.ConfigMu.Unlock()
+
+		if token != "" {
+			fmt.Println("Releasing zrok token:", token)
+			if err := ReleaseZrokToken(token); err != nil {
+				fmt.Printf("Failed to release zrok token: %v\n", err)
+			} else {
+				fmt.Println("Successfully released zrok token")
+			}
+		}
+
 		os.Exit(0)
 	}()
 }

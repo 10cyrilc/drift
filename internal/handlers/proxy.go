@@ -12,7 +12,7 @@ import (
 )
 
 // ConfigureProxy handles the proxy configuration request
-func ConfigureProxy(state *models.AppState) http.HandlerFunc {
+func ConfigureProxy(state *models.AppState, proxyPort string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -31,6 +31,53 @@ func ConfigureProxy(state *models.AppState) http.HandlerFunc {
 			return
 		}
 
+		// Handle zrok options
+		zrokOption := r.FormValue("zrok_option")
+
+		state.ConfigMu.Lock()
+		existingToken := ""
+		existingURL := ""
+		if state.Config != nil && state.Config.ZrokToken != "" && state.Config.ZrokPort == proxyPort {
+			existingToken = state.Config.ZrokToken
+			existingURL = state.Config.ZrokURL
+		}
+		state.ConfigMu.Unlock()
+
+		if zrokOption == "custom" {
+			// Use user-provided token
+			token := r.FormValue("zrok_token")
+			tokenPort := r.FormValue("zrok_port")
+			if token != "" && tokenPort != "" {
+				config.ZrokToken = token
+				config.ZrokPort = tokenPort
+
+				// Warn if the port doesn't match
+				if tokenPort != proxyPort {
+					fmt.Printf("Warning: Using token for port %s with current proxy port %s\n", tokenPort, proxyPort)
+				}
+			}
+		} else {
+			// Auto mode: use existing token or create new one
+			if existingToken != "" {
+				// Reuse existing token for this port
+				fmt.Printf("Reusing existing zrok token: %s for port %s\n", existingToken, proxyPort)
+				config.ZrokToken = existingToken
+				config.ZrokURL = existingURL
+				config.ZrokPort = proxyPort
+			} else {
+				// Create a new token
+				token, url, err := tunnel.ReserveZrokToken(proxyPort)
+				if err != nil {
+					fmt.Printf("Failed to reserve zrok token: %v\n", err)
+				} else {
+					config.ZrokToken = token
+					config.ZrokURL = url
+					config.ZrokPort = proxyPort
+					fmt.Printf("Reserved new zrok token: %s for port %s, URL: %s\n", token, proxyPort, url)
+				}
+			}
+		}
+
 		state.ConfigMu.Lock()
 		state.Config = config
 		state.ConfigMu.Unlock()
@@ -42,7 +89,7 @@ func ConfigureProxy(state *models.AppState) http.HandlerFunc {
 		proxy.MonitorBackend(config.BackendURL, state)
 
 		// Start zrok in a separate goroutine
-		go tunnel.StartZrok(state, "4040")
+		go tunnel.StartZrok(state, proxyPort)
 
 		http.Redirect(w, r, "/inspector/dashboard", http.StatusSeeOther)
 	}
