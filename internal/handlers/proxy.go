@@ -100,19 +100,14 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		isInspectorRoute := path == "/inspector/configure" || path == "/inspector/configure/" ||
-			path == "/inspector/dashboard" || path == "/inspector/dashboard/" ||
-			path == "/inspector/analytics" || path == "/inspector/analytics/"
-		if isInspectorRoute {
-			host := r.Host
-			if !strings.Contains(host, "localhost") && !strings.Contains(host, "127.0.0.1") && !strings.Contains(host, "[::1]") {
-				http.Error(w, "Not found", http.StatusNotFound)
-				return
-			}
+		// Handle inspector routes
+		if strings.HasPrefix(path, "/inspector/") {
 			if path == "/inspector/configure" || path == "/inspector/configure/" {
 				http.ServeFileFS(w, r, staticFiles, "static/configure/index.html")
 			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
 				http.ServeFileFS(w, r, staticFiles, "static/analytics/index.html")
+			} else if path == "/inspector/notifications" || path == "/inspector/notifications/" {
+				http.ServeFileFS(w, r, staticFiles, "static/notifications/index.html")
 			} else {
 				http.ServeFileFS(w, r, staticFiles, "static/dashboard/index.html")
 			}

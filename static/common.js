@@ -89,34 +89,40 @@ function showInfo(message, duration = 5000) {
 // Remove a notification
 function removeNotification(id) {
   const notification = document.querySelector(`.notification[data-id="${id}"]`);
-  if (!notification) return;
+  if (notification) {
+    // Animate out
+    notification.style.animation = "slide-out 0.3s ease forwards";
 
-  // Animate out
-  notification.style.animation = "slide-out 0.3s ease forwards";
-
-  // Remove from DOM after animation
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.parentNode.removeChild(notification);
-    }
-  }, 300);
+    // Remove from DOM after animation
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }
 
   // Remove from storage
   notifications = notifications.filter((n) => n.id !== id);
   saveNotifications();
+
+  // Update badge
+  updateNotificationsBadge();
 }
 
 // Clear all notifications
 function clearAllNotifications() {
   const container = document.querySelector(".notification-container");
-  if (!container) return;
-
-  // Remove all from DOM
-  container.innerHTML = "";
+  if (container) {
+    // Remove all from DOM
+    container.innerHTML = "";
+  }
 
   // Clear storage
   notifications = [];
   saveNotifications();
+
+  // Update badge
+  updateNotificationsBadge();
 }
 
 // Save notifications to session storage
@@ -144,7 +150,15 @@ function loadNotifications() {
 
 // Get all stored notifications
 function getNotifications() {
-  return [...notifications];
+  try {
+    const stored = sessionStorage.getItem(NOTIFICATION_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Error loading notifications from session storage:", error);
+  }
+  return [];
 }
 
 // Function to get appropriate icon for HTTP method
@@ -422,208 +436,38 @@ function initializeTopBar() {
   setInterval(updateStatus, 5000);
 }
 
-// Add notifications panel functionality
-function createNotificationsPanel() {
-  // Create panel if it doesn't exist
-  if (!document.querySelector(".notifications-history-panel")) {
-    const panel = document.createElement("div");
-    panel.className = "notifications-history-panel";
-    panel.innerHTML = `
-      <div class="notifications-panel-header">
-        <h3>Notifications History</h3>
-        <button class="notifications-panel-close">&times;</button>
-      </div>
-      <div class="notifications-list"></div>
-      <div class="notifications-panel-actions">
-        <button class="export-notifications">Export</button>
-        <button class="clear-all">Clear All</button>
-      </div>
-    `;
-    document.body.appendChild(panel);
-
-    // Add event listeners
-    const closeBtn = panel.querySelector(".notifications-panel-close");
-    closeBtn.addEventListener("click", toggleNotificationsPanel);
-
-    const clearBtn = panel.querySelector(".clear-all");
-    clearBtn.addEventListener("click", () => {
-      if (confirm("Are you sure you want to clear all notifications?")) {
-        clearAllNotifications();
-        updateNotificationsPanel();
-      }
-    });
-
-    const exportBtn = panel.querySelector(".export-notifications");
-    exportBtn.addEventListener("click", exportNotifications);
-  }
-}
-
-// Add notifications toggle to sidebar instead of top bar
-function addNotificationsToggle() {
-  // Remove existing toggle if any
-  const existingToggle = document.querySelector(".notifications-toggle");
-  if (existingToggle) {
-    existingToggle.remove();
-  }
-
-  // Add to sidebar menu
-  const sidebarMenu = document.querySelector(".sidebar-menu");
-  if (!sidebarMenu) return;
-
-  // Create new sidebar item for notifications
-  const notificationsItem = document.createElement("div");
-  notificationsItem.className = "sidebar-item";
-  notificationsItem.setAttribute("data-tooltip", "Notifications");
-  notificationsItem.innerHTML = `
-    <span class="sidebar-icon">
-      <span class="material-icons">notifications</span>
-      <span class="notifications-badge">0</span>
-    </span>
-    <span class="sidebar-label">Notifications</span>
-  `;
-  notificationsItem.addEventListener("click", toggleNotificationsPanel);
-
-  // Add to sidebar menu - insert before the last item (usually Configure)
-  const items = sidebarMenu.querySelectorAll(".sidebar-item");
-  if (items.length > 0) {
-    sidebarMenu.insertBefore(notificationsItem, items[items.length - 1]);
-  } else {
-    sidebarMenu.appendChild(notificationsItem);
-  }
-
-  // Update badge count
-  updateNotificationsBadge();
-}
-
-// Toggle notifications panel
-function toggleNotificationsPanel() {
-  const panel = document.querySelector(".notifications-history-panel");
-  if (!panel) return;
-
-  panel.classList.toggle("open");
-
-  // Update content when opening
-  if (panel.classList.contains("open")) {
-    updateNotificationsPanel();
-  }
-}
-
-// Update notifications panel content
-function updateNotificationsPanel() {
-  const listContainer = document.querySelector(".notifications-list");
-  if (!listContainer) return;
-
-  // Get all notifications
-  const allNotifications = getNotifications();
-
-  if (allNotifications.length === 0) {
-    listContainer.innerHTML = `
-      <div class="empty-notifications">
-        <div class="empty-notifications-icon">📭</div>
-        <div>No notifications yet</div>
-      </div>
-    `;
-    return;
-  }
-
-  // Sort by timestamp (newest first)
-  allNotifications.sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  );
-
-  // Generate HTML
-  const notificationsHTML = allNotifications
-    .map((notification) => {
-      const date = new Date(notification.timestamp);
-      const formattedDate = date.toLocaleString();
-
-      return `
-      <div class="notification-item ${notification.type}">
-        <div class="notification-item-header">
-          <span>${notification.type.toUpperCase()}</span>
-          <span>${formattedDate}</span>
-        </div>
-        <div class="notification-item-content">${notification.message}</div>
-      </div>
-    `;
-    })
-    .join("");
-
-  listContainer.innerHTML = notificationsHTML;
-}
+// Remove the createNotificationsPanel and toggleNotificationsPanel functions
+// since we're using a dedicated page now
 
 // Update notifications badge count
 function updateNotificationsBadge() {
-  const badge = document.querySelector(".notifications-badge");
-  if (!badge) return;
+  const badges = document.querySelectorAll(".notifications-badge");
+  if (!badges.length) return;
 
   const count = notifications.length;
-  badge.textContent = count > 99 ? "99+" : count;
-  badge.style.display = count > 0 ? "flex" : "none";
+
+  badges.forEach((badge) => {
+    badge.textContent = count > 99 ? "99+" : count;
+    badge.style.display = count > 0 ? "flex" : "none";
+  });
 }
 
-// Export notifications as JSON
-function exportNotifications() {
-  const allNotifications = getNotifications();
-  if (allNotifications.length === 0) {
-    showInfo("No notifications to export");
-    return;
-  }
-
-  const dataStr = JSON.stringify(allNotifications, null, 2);
-  const dataUri =
-    "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
-
-  const exportFileDefaultName = `notifications-${new Date()
-    .toISOString()
-    .slice(0, 10)}.json`;
-
-  const linkElement = document.createElement("a");
-  linkElement.setAttribute("href", dataUri);
-  linkElement.setAttribute("download", exportFileDefaultName);
-  linkElement.click();
-}
-
-// Override showNotification to update badge
-const originalShowNotification = showNotification;
-showNotification = function (message, type = "info", duration = 5000) {
-  const id = originalShowNotification(message, type, duration);
-  updateNotificationsBadge();
-  return id;
-};
-
-// Override removeNotification to update badge
-const originalRemoveNotification = removeNotification;
-removeNotification = function (id) {
-  originalRemoveNotification(id);
-  updateNotificationsBadge();
-};
-
-// Override clearAllNotifications to update badge
-const originalClearAllNotifications = clearAllNotifications;
-clearAllNotifications = function () {
-  originalClearAllNotifications();
-  updateNotificationsBadge();
-};
-
-// Initialize notifications panel
-function initNotificationsHistory() {
-  createNotificationsPanel();
-  addNotificationsToggle();
-  updateNotificationsBadge();
-}
-
-// Initialize common elements when DOM is loaded
+// Initialize the notification system
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Common.js: Initializing notification system");
   initNotificationSystem();
-  initNotificationsHistory();
+
+  // Update badge count
+  updateNotificationsBadge();
 
   // Add to existing initialization
   if (document.querySelector(".top-bar")) {
+    console.log("Common.js: Initializing top bar");
     initializeTopBar();
   }
 
   if (document.getElementById("sidebar")) {
+    console.log("Common.js: Setting up sidebar");
     setupSidebar();
   }
 

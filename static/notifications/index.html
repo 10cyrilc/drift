@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>API Interceptor Dashboard</title>
+    <title>Notifications - API Interceptor</title>
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/common.css" />
-    <link rel="stylesheet" href="/static/dashboard/dashboard.css" />
+    <link rel="stylesheet" href="/static/notifications/notifications.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔔</text></svg>"
     />
     <script src="/static/common.js"></script>
   </head>
@@ -27,7 +27,7 @@
       <div class="sidebar-menu">
         <a
           href="/inspector/dashboard"
-          class="sidebar-item active"
+          class="sidebar-item"
           data-tooltip="Dashboard"
         >
           <span class="sidebar-icon">
@@ -72,7 +72,7 @@
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <div class="main-content" id="main-content">
-      <div id="dashboard" class="dashboard">
+      <div id="notifications-page" class="notifications-page">
         <div class="top-bar">
           <div class="top-bar-left">
             <span id="localhost-url">Localhost URL: Loading...</span>
@@ -85,51 +85,47 @@
           </div>
         </div>
         <div class="split-screen">
-          <div class="request-list">
-            <div class="request-list-header">
-              <h2>API Requests</h2>
+          <div class="notifications-list-panel">
+            <div class="notifications-list-header">
               <div class="search-container">
                 <input
                   type="text"
-                  id="request-search"
-                  placeholder="Search requests..."
+                  id="notification-search"
+                  placeholder="Search notifications..."
                 />
+                <span class="material-icons search-icon">search</span>
+              </div>
+              <div class="notification-filters">
+                <button class="filter-btn active" data-type="all">All</button>
+                <button class="filter-btn" data-type="success">Success</button>
+                <button class="filter-btn" data-type="error">Error</button>
+                <button class="filter-btn" data-type="warning">Warning</button>
+                <button class="filter-btn" data-type="info">Info</button>
               </div>
             </div>
-            <div class="request-list-actions">
-              <button id="clear-requests" title="Clear all requests">
-                Clear All
-              </button>
-              <div class="method-filter">
-                <button class="filter-btn active" data-method="all">All</button>
-                <button class="filter-btn" data-method="get">GET</button>
-                <button class="filter-btn" data-method="post">POST</button>
-                <button class="filter-btn" data-method="put">PUT</button>
-                <button class="filter-btn" data-method="patch">PATCH</button>
-                <button class="filter-btn" data-method="delete">DEL</button>
-              </div>
-            </div>
-            <ul id="requests"></ul>
-            <div class="empty-state" id="empty-requests">
-              <div class="empty-icon">📥</div>
-              <div class="empty-text">No requests yet</div>
+            <ul id="notifications-list"></ul>
+            <div class="empty-state" id="empty-notifications">
+              <div class="empty-icon">📭</div>
+              <div class="empty-text">No notifications yet</div>
               <div class="empty-subtext">
-                Make API calls to your server to see them here
+                Notifications will appear here as they occur
               </div>
             </div>
           </div>
-          <div class="request-details">
-            <h2>Request Details</h2>
-            <div id="details" class="details-placeholder">
+          <div class="notification-details">
+            <h2>Notification Details</h2>
+            <div id="notification-detail" class="notification-detail-content">
               <div class="empty-state">
                 <div class="empty-icon">👈</div>
-                <div class="empty-text">Select a request to view details</div>
+                <div class="empty-text">
+                  Select a notification to view details
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <script src="/static/dashboard/dashboard.js"></script>
+    <script src="/static/notifications/notifications.js"></script>
   </body>
 </html>
