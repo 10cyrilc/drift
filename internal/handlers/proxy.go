@@ -106,11 +106,11 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 		if isInspectorRoute {
 			host := r.Host
 			if !strings.Contains(host, "localhost") && !strings.Contains(host, "127.0.0.1") && !strings.Contains(host, "[::1]") {
-				http.Error(w, "Inspector is only accessible from localhost", http.StatusForbidden)
+				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
 			if path == "/inspector/configure" || path == "/inspector/configure/" {
-				http.ServeFileFS(w, r, staticFiles, "static/landing/index.html")
+				http.ServeFileFS(w, r, staticFiles, "static/configure/index.html")
 			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
 				http.ServeFileFS(w, r, staticFiles, "static/analytics/index.html")
 			} else {
