@@ -725,10 +725,7 @@ function executeRequest(request) {
   }
 
   // Show loading indicator
-  const notification = document.createElement("div");
-  notification.className = "notification";
-  notification.textContent = "Sending request...";
-  document.body.appendChild(notification);
+  showInfo("Sending request...");
 
   // Get the original URL
   let originalUrl;
@@ -736,13 +733,7 @@ function executeRequest(request) {
     originalUrl = new URL(request.url);
   } catch (e) {
     console.error("Invalid URL:", request.url);
-    notification.textContent = `Error: Invalid URL - ${request.url}`;
-    notification.classList.add("error");
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
-    }, 5000);
+    showError(`Error: Invalid URL - ${request.url}`);
     return;
   }
 
@@ -779,26 +770,12 @@ function executeRequest(request) {
     })
     .then((responseData) => {
       console.log("Response received:", responseData);
-      notification.textContent = `Request completed: ${responseData.status} ${responseData.statusText}`;
-      notification.classList.add("success");
-
-      // Remove notification after 3 seconds
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 3000);
+      showSuccess(
+        `Request completed: ${responseData.status} ${responseData.statusText}`
+      );
     })
     .catch((error) => {
       console.error("Error replaying request:", error);
-      notification.textContent = `Error: ${error.message}`;
-      notification.classList.add("error");
-
-      // Remove notification after 5 seconds
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 5000);
+      showError(`Request failed: ${error.message}`);
     });
 }
