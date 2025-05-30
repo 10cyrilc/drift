@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -18,16 +19,12 @@ func Setup(port string, state *models.AppState) (*models.ProxyConfig, error) {
 		return nil, fmt.Errorf("invalid port: %w", err)
 	}
 
-	// Check if backend is reachable
-	resp, err := http.Get(backendURL.String())
+	// Check if backend port is open rather than pinging a specific endpoint
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%s", port), 2*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("backend server on port %s is not reachable: %w", port, err)
 	}
-	if resp.StatusCode >= 400 {
-		resp.Body.Close()
-		return nil, fmt.Errorf("backend server on port %s returned status %d", port, resp.StatusCode)
-	}
-	resp.Body.Close()
+	conn.Close()
 
 	// Create reverse proxy
 	proxy := httputil.NewSingleHostReverseProxy(backendURL)
@@ -46,17 +43,27 @@ func Setup(port string, state *models.AppState) (*models.ProxyConfig, error) {
 func MonitorBackend(backendURL *url.URL, state *models.AppState) {
 	go func() {
 		for {
-			resp, err := http.Get(backendURL.String())
+			// Extract port from backendURL
+			port := backendURL.Port()
+			if port == "" {
+				if backendURL.Scheme == "https" {
+					port = "443"
+				} else {
+					port = "80"
+				}
+			}
+
+			// Check if port is open
+			conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%s", port), 2*time.Second)
 			state.StatusMu.Lock()
-			if err != nil || resp.StatusCode >= 400 {
+			if err != nil {
 				state.ServerStatus = "Inactive"
 			} else {
+				conn.Close()
 				state.ServerStatus = "Active"
 			}
 			state.StatusMu.Unlock()
-			if resp != nil {
-				resp.Body.Close()
-			}
+
 			time.Sleep(5 * time.Second)
 		}
 	}()
