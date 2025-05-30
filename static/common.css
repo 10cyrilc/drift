@@ -34,39 +34,36 @@ body {
 }
 
 /* Method & Status Code Colors */
+.method-get,
+.method-post,
+.method-put,
+.method-delete,
+.method-patch {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
 .method-get {
   color: #61b0ff;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
 }
-
 .method-post {
   color: #4ade80;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
 }
-
 .method-put {
   color: #fbbf24;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
 }
-
 .method-delete {
   color: #f87171;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
 }
-
 .method-patch {
   color: #c084fc;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
+}
+
+/* Replace SVG background with Material Icons */
+.method-icon {
+  font-size: 16px;
+  margin-right: 8px;
 }
 
 .method-unknown {
@@ -215,11 +212,16 @@ body {
   background: none;
   border: none;
   color: var(--text-color);
-  font-size: 24px;
   cursor: pointer;
   padding: 5px;
   transition: var(--transition);
   margin-right: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-toggle .material-icons {
+  font-size: 24px;
 }
 
 .sidebar-toggle:hover {
@@ -268,9 +270,15 @@ body {
 
 .sidebar-icon {
   position: relative;
-  font-size: 20px;
   min-width: 30px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-icon .material-icons {
+  font-size: 20px;
 }
 
 .sidebar-icon .notifications-badge {

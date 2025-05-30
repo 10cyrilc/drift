@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>API Interceptor Dashboard</title>
-    <!-- Add Material Icons -->
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
@@ -20,7 +19,9 @@
   <body>
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <button id="sidebar-toggle" class="sidebar-toggle">☰</button>
+        <button id="sidebar-toggle" class="sidebar-toggle">
+          <span class="material-icons">menu</span>
+        </button>
         <span class="sidebar-title">API Interceptor</span>
       </div>
       <div class="sidebar-menu">
@@ -29,7 +30,9 @@
           class="sidebar-item active"
           data-tooltip="Dashboard"
         >
-          <span class="sidebar-icon">📊</span>
+          <span class="sidebar-icon">
+            <span class="material-icons">dashboard</span>
+          </span>
           <span class="sidebar-label">Dashboard</span>
         </a>
         <a
@@ -37,7 +40,9 @@
           class="sidebar-item"
           data-tooltip="Analytics"
         >
-          <span class="sidebar-icon">📉</span>
+          <span class="sidebar-icon">
+            <span class="material-icons">analytics</span>
+          </span>
           <span class="sidebar-label">Analytics</span>
         </a>
         <a
@@ -45,7 +50,9 @@
           class="sidebar-item"
           data-tooltip="Configure"
         >
-          <span class="sidebar-icon">⚙️</span>
+          <span class="sidebar-icon">
+            <span class="material-icons">settings</span>
+          </span>
           <span class="sidebar-label">Configure</span>
         </a>
       </div>

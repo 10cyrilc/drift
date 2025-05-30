@@ -147,6 +147,29 @@ function getNotifications() {
   return [...notifications];
 }
 
+// Function to get appropriate icon for HTTP method
+function getMethodIcon(method) {
+  const icons = {
+    GET: "description",
+    POST: "add_circle",
+    PUT: "sync",
+    DELETE: "delete",
+    PATCH: "edit",
+  };
+  return icons[method] || "http";
+}
+
+// Example of how to create a method element
+function createMethodElement(method) {
+  const methodEl = document.createElement("span");
+  methodEl.className = `method-${method.toLowerCase()}`;
+  methodEl.innerHTML = `
+    <span class="material-icons method-icon">${getMethodIcon(method)}</span>
+    ${method}
+  `;
+  return methodEl;
+}
+
 // Initialize WebSocket connection
 function connectWebSocket(onMessageCallback) {
   // If already connected, don't reconnect
