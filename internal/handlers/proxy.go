@@ -106,8 +106,6 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 				http.ServeFileFS(w, r, staticFiles, "static/configure/index.html")
 			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
 				http.ServeFileFS(w, r, staticFiles, "static/analytics/index.html")
-			} else if path == "/inspector/notifications" || path == "/inspector/notifications/" {
-				http.ServeFileFS(w, r, staticFiles, "static/notifications/index.html")
 			} else {
 				http.ServeFileFS(w, r, staticFiles, "static/dashboard/index.html")
 			}
