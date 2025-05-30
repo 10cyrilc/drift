@@ -21,11 +21,11 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/10cyrilc/amgp.git
-cd amgp
+git clone https://github.com/10cyrilc/api-intercetpor.git
+cd api-intercetpor
 
 # Build the app
-go build -o amgp
+go build -o api-intercetpor
 ```
 
 ---
@@ -33,14 +33,23 @@ go build -o amgp
 ## 🚦 Usage
 
 ```bash
-# Start with default port (4040)
-./amgp
+# Start with default settings (shows help)
+./api-intercetpor
+
+# Start the server with default port (4040)
+./api-intercetpor serve
 
 # Start with custom port
-./amgp -port 5050
+./api-intercetpor serve -p 5050
+
+# Show version information
+./api-intercetpor -v
+
+# Show help information
+./api-intercetpor -h
 
 # Using environment variable
-API_INTERCEPTOR_PORT=5050 ./amgp
+API_INTERCEPTOR_PORT=5050 ./api-intercetpor serve
 ```
 
 ---
@@ -79,6 +88,19 @@ Frontend --> [API Interceptor] --> Backend
 - Easily expose your local instance to the internet:
   - Automatically connects using Zrok
   - Share a live link to your intercepted traffic with collaborators
+  - Two sharing options:
+    - **Auto**: Automatically creates and manages a public URL
+    - **Custom**: Use a specific reserved token for consistent URLs
+
+To use a reserved token:
+
+1. Reserve a token first: `zrok reserve public --backend-mode proxy 4040`
+2. Use the token in the configuration page or pass it directly
+3. Tokens are tied to specific ports, so use the same port when sharing
+
+```bash
+# The token will be automatically released when the app is closed
+```
 
 ---
 
