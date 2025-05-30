@@ -24,24 +24,16 @@ function loadSavedData() {
         );
       }
 
-      console.log(
-        `Analytics: Loaded ${requestData.length} requests and ${requestTimestamps.length} timestamps`
-      );
-
       updateAnalytics();
       updateGraph();
     }
   } catch (error) {
-    console.error("Error loading saved data:", error);
+    showError("Error loading saved data:", error);
   }
 }
 
 function connectWebSocket() {
   const ws = new WebSocket("ws://" + window.location.host + "/ws");
-
-  ws.onopen = function () {
-    console.log("WebSocket connected");
-  };
 
   ws.onmessage = function (event) {
     try {
@@ -62,7 +54,7 @@ function connectWebSocket() {
       updateAnalytics();
       updateGraph();
     } catch (error) {
-      console.error("Error processing message:", error);
+      showError("Error processing message:", error);
     }
   };
 

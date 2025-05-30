@@ -6,12 +6,10 @@ let selectedRequestId = null;
 
 // Load saved requests from sessionStorage
 function loadSavedRequests() {
-  console.log("Dashboard: Loading saved requests");
   try {
     const savedData = sessionStorage.getItem("requestData");
     if (savedData) {
       const requests = JSON.parse(savedData);
-      console.log(`Dashboard: Found ${requests.length} saved requests`);
 
       // Process each saved request
       requests.forEach((log) => {
@@ -27,19 +25,16 @@ function loadSavedRequests() {
         }
       }
     } else {
-      console.log("Dashboard: No saved requests found");
     }
 
     toggleEmptyState();
   } catch (error) {
-    console.error("Dashboard: Error loading saved requests:", error);
+    showError("Dashboard: Error loading saved requests:", error);
   }
 }
 
 // Handle WebSocket message
 function handleWebSocketMessage(log) {
-  console.log("Dashboard: Received WebSocket message:", log.request.id);
-
   // Store in cache
   requestCache[log.request.id] = log;
 
@@ -92,7 +87,6 @@ function formatRelativeTime(timestamp) {
 
 // Add request to UI
 function addRequestToUI(log) {
-  console.log("Dashboard: Adding request to UI:", log.request.id);
   const requestsList = document.getElementById("requests");
   if (!requestsList) return;
 
@@ -186,7 +180,7 @@ function formatJSON(json) {
         }
       );
   } catch (e) {
-    console.error("Error formatting JSON:", e);
+    showError("Error formatting JSON:", e);
     return json;
   }
 }
@@ -203,7 +197,6 @@ function copyToClipboard(text) {
 
 // Display request details
 function displayRequestDetails(log) {
-  console.log("Dashboard: Displaying details for request:", log.request.id);
   const detailsContainer = document.getElementById("details");
   if (!detailsContainer) return;
 
@@ -550,8 +543,6 @@ function updateRelativeTimestamps() {
 
 // Initialize everything when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Dashboard: DOM loaded, initializing dashboard");
-
   // Load saved requests
   loadSavedRequests();
 
@@ -566,8 +557,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Start timer to update relative timestamps
   setInterval(updateRelativeTimestamps, 30000); // Update every 30 seconds
-
-  console.log("Dashboard: Initialization complete");
 });
 
 // Replay a request
@@ -711,8 +700,6 @@ function parseHeadersFromEdit(headersText) {
 
 // Execute the request
 function executeRequest(request) {
-  console.log("Replaying request:", request);
-
   // Create fetch options
   const options = {
     method: request.method,
@@ -732,7 +719,6 @@ function executeRequest(request) {
   try {
     originalUrl = new URL(request.url);
   } catch (e) {
-    console.error("Invalid URL:", request.url);
     showError(`Error: Invalid URL - ${request.url}`);
     return;
   }
@@ -744,10 +730,6 @@ function executeRequest(request) {
 
   // Keep the original path and query string
   const proxyUrl = `${currentProtocol}//${currentHost}${originalUrl.pathname}${originalUrl.search}`;
-
-  console.log(
-    `Redirecting request from ${request.url} to proxy URL: ${proxyUrl}`
-  );
 
   // Execute the request through our proxy
   fetch(proxyUrl, options)
@@ -769,13 +751,11 @@ function executeRequest(request) {
       });
     })
     .then((responseData) => {
-      console.log("Response received:", responseData);
       showSuccess(
         `Request completed: ${responseData.status} ${responseData.statusText}`
       );
     })
     .catch((error) => {
-      console.error("Error replaying request:", error);
       showError(`Request failed: ${error.message}`);
     });
 }

@@ -137,7 +137,7 @@ function loadNotifications() {
       notifications = JSON.parse(stored);
     }
   } catch (error) {
-    console.error("Error loading notifications from session storage:", error);
+    showError("Error loading notifications from session storage:", error);
     notifications = [];
   }
 }
@@ -174,24 +174,18 @@ function createMethodElement(method) {
 function connectWebSocket(onMessageCallback) {
   // If already connected, don't reconnect
   if (commonWs && commonWs.readyState === WebSocket.OPEN) {
-    console.log("WebSocket already connected");
+    showInfo("WebSocket already connected");
     return;
   }
 
-  console.log("Connecting to WebSocket...");
   commonWs = new WebSocket("ws://" + window.location.host + "/ws");
 
   commonWs.onopen = function () {
-    console.log("WebSocket connected successfully");
     reconnectAttempts = 0;
     // Don't update server status here - let the status API handle it
   };
 
   commonWs.onmessage = function (event) {
-    console.log(
-      "WebSocket message received:",
-      event.data.substring(0, 100) + "..."
-    );
     try {
       const log = JSON.parse(event.data);
 
@@ -213,12 +207,11 @@ function connectWebSocket(onMessageCallback) {
         onMessageCallback(log);
       }
     } catch (error) {
-      console.error("Error processing WebSocket message:", error);
+      showError("Error processing WebSocket message:", error);
     }
   };
 
   commonWs.onclose = function () {
-    console.log("WebSocket connection closed");
     const statusEl = document.getElementById("server-status");
     if (statusEl) {
       statusEl.textContent = "Server Status: Disconnected";
@@ -229,19 +222,15 @@ function connectWebSocket(onMessageCallback) {
     // Try to reconnect
     if (reconnectAttempts < maxReconnectAttempts) {
       reconnectAttempts++;
-      console.log(
-        `Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`
-      );
       setTimeout(() => connectWebSocket(onMessageCallback), 5000);
     } else {
-      console.log("Max reconnect attempts reached");
+      showError("Max reconnect attempts reached");
     }
   };
 
   commonWs.onerror = function (error) {
-    console.error("WebSocket error:", error);
     showError(
-      "WebSocket connection error. Some features may not work correctly."
+      `WebSocket connection error. Some features may not work correctly. ${error}`
     );
 
     const statusEl = document.getElementById("server-status");
@@ -287,7 +276,6 @@ function updateStatus() {
       }
 
       const serverStatus = data.serverStatus;
-      console.log(serverStatus);
       const statusEl = document.getElementById("server-status");
       if (statusEl) {
         statusEl.textContent = `Server Status: ${serverStatus}`;
@@ -314,7 +302,7 @@ function updateStatus() {
       }
     })
     .catch((error) => {
-      console.error("Error fetching status:", error);
+      showError("Error fetching status:", error);
       showError("Failed to fetch server status: " + error.message);
       hideLoading("server-status");
       hideLoading("localhost-url");
@@ -627,18 +615,15 @@ function initNotificationsHistory() {
 
 // Initialize common elements when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Common.js: Initializing notification system");
   initNotificationSystem();
   initNotificationsHistory();
 
   // Add to existing initialization
   if (document.querySelector(".top-bar")) {
-    console.log("Common.js: Initializing top bar");
     initializeTopBar();
   }
 
   if (document.getElementById("sidebar")) {
-    console.log("Common.js: Setting up sidebar");
     setupSidebar();
   }
 
