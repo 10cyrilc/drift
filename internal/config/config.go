@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"os"
 	"strconv"
 )
@@ -11,7 +10,7 @@ type Config struct {
 	Port string
 }
 
-// Load loads the configuration from environment variables and command line flags
+// Load loads the configuration from environment variables
 func Load() *Config {
 	config := &Config{
 		Port: "4040",
@@ -21,17 +20,6 @@ func Load() *Config {
 	if port := os.Getenv("API_INTERCEPTOR_PORT"); port != "" {
 		if _, err := strconv.Atoi(port); err == nil {
 			config.Port = port
-		}
-	}
-
-	// Parse command line flags
-	portFlag := flag.String("port", config.Port, "Port to run the server on")
-	flag.Parse()
-
-	// Command line flags take precedence over environment variables
-	if *portFlag != config.Port {
-		if _, err := strconv.Atoi(*portFlag); err == nil {
-			config.Port = *portFlag
 		}
 	}
 
