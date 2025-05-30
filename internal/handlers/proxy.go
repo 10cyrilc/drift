@@ -100,8 +100,26 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		// Handle inspector routes
+		// Handle inspector routes - only allow from localhost
 		if strings.HasPrefix(path, "/inspector/") {
+			host := r.Host
+			isLocalhost := strings.HasPrefix(host, "localhost:")
+
+			if !isLocalhost {
+				// Not localhost - forward to proxy
+				state.ConfigMu.Lock()
+				if state.Config == nil || state.Config.Proxy == nil {
+					state.ConfigMu.Unlock()
+					http.Error(w, "Proxy not configured", http.StatusServiceUnavailable)
+					return
+				}
+				proxy := state.Config.Proxy
+				state.ConfigMu.Unlock()
+				proxy.ServeHTTP(w, r)
+				return
+			}
+
+			// Continue with normal inspector handling for localhost
 			if path == "/inspector/configure" || path == "/inspector/configure/" {
 				http.ServeFileFS(w, r, staticFiles, "static/configure/index.html")
 			} else if path == "/inspector/analytics" || path == "/inspector/analytics/" {
