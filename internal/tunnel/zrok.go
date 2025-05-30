@@ -195,26 +195,31 @@ func SetupCleanupHandler(state *models.AppState) {
 		<-c
 		fmt.Println("Shutting down, cleaning up resources...")
 
-		// Kill zrok process
+		// Kill zrok process only if it exists
 		state.ZrokCmd.Lock()
+		zrokProcessExists := false
 		if state.ZrokProcess != nil {
 			if process, ok := state.ZrokProcess.(*exec.Cmd); ok && process.Process != nil {
+				zrokProcessExists = true
+				fmt.Println("Stopping zrok process...")
 				process.Process.Kill()
 			}
 		}
 		state.ZrokCmd.Unlock()
 
-		// Release the reserved token
-		state.ConfigMu.Lock()
-		token := state.Config.ZrokToken
-		state.ConfigMu.Unlock()
+		// Release the reserved token only if we had a zrok process
+		if zrokProcessExists {
+			state.ConfigMu.Lock()
+			token := state.Config.ZrokToken
+			state.ConfigMu.Unlock()
 
-		if token != "" {
-			fmt.Println("Releasing zrok token:", token)
-			if err := ReleaseZrokToken(token); err != nil {
-				fmt.Printf("Failed to release zrok token: %v\n", err)
-			} else {
-				fmt.Println("Successfully released zrok token")
+			if token != "" {
+				fmt.Println("Releasing zrok token:", token)
+				if err := ReleaseZrokToken(token); err != nil {
+					fmt.Printf("Failed to release zrok token: %v\n", err)
+				} else {
+					fmt.Println("Successfully released zrok token")
+				}
 			}
 		}
 
