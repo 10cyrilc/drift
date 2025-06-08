@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"api-interceptor/internal/models"
-	"api-interceptor/internal/proxy"
-	"api-interceptor/internal/tunnel"
+	"drift/internal/models"
+	"drift/internal/proxy"
+	"drift/internal/tunnel"
 )
 
 // ConfigureProxy handles the proxy configuration request

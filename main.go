@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 
-	"api-interceptor/internal/cmd"
+	"drift/internal/cmd"
 )
 
 //go:embed static/*

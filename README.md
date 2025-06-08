@@ -1,4 +1,4 @@
-# API Monitor with Go based Proxy 🔎
+# DRIFT - Dynamic Request Interception and Forwarding Tool 🔎
 
 **A fast and lightweight reverse proxy for inspecting and debugging API traffic in real-time. Built in Go.**
 
@@ -21,11 +21,11 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/10cyrilc/api-intercetpor.git
-cd api-intercetpor
+git clone https://github.com/10cyrilc/drift.git
+cd drift
 
 # Build the app
-go build -o api-intercetpor
+go build
 ```
 
 ---
@@ -34,22 +34,22 @@ go build -o api-intercetpor
 
 ```bash
 # Start with default settings (shows help)
-./api-intercetpor
+./drift
 
 # Start the server with default port (4040)
-./api-intercetpor serve
+./drift serve
 
 # Start with custom port
-./api-intercetpor serve -p 5050
+./drift serve -p 5050
 
 # Show version information
-./api-intercetpor -v
+./drift -v
 
 # Show help information
-./api-intercetpor -h
+./drift -h
 
 # Using environment variable
-API_INTERCEPTOR_PORT=5050 ./api-intercetpor serve
+API_INTERCEPTOR_PORT=5050 ./drift serve
 ```
 
 ---
@@ -62,11 +62,11 @@ API_INTERCEPTOR_PORT=5050 ./api-intercetpor serve
 4. You view everything in the browser dashboard at `http://localhost:4040/inspector`.
 
 ```bash
-Frontend --> [API Interceptor] --> Backend
-                   ↑
-                Logging
-                   ↓
-             [Web Dashboard]
+Frontend --> [DRIFT] --> Backend
+                ↑
+            Logging
+                ↓
+          [Web Dashboard]
 ```
 
 ---
@@ -107,7 +107,7 @@ To use a reserved token:
 ## 📁 Folder Structure
 
 ```
-api-interceptor/
+drift/
 ├── internal/
 │   ├── config/       # CLI + env config
 │   ├── handlers/     # Proxy, WebSocket, status endpoints

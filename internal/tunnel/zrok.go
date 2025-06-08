@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"api-interceptor/internal/models"
+	"drift/internal/models"
 )
 
 // ReserveZrokToken reserves a new zrok share token for a specific port

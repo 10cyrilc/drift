@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
-	"api-interceptor/internal/logging"
-	"api-interceptor/internal/models"
+	"drift/internal/logging"
+	"drift/internal/models"
 )
 
 // Setup configures a new reverse proxy

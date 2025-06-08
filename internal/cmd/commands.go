@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"api-interceptor/internal/config"
-	"api-interceptor/internal/models"
-	"api-interceptor/internal/server"
+	"drift/internal/config"
+	"drift/internal/models"
+	"drift/internal/server"
 )
 
 // Execute parses command line arguments and executes the appropriate command
@@ -64,7 +64,7 @@ func Execute(staticFiles embed.FS, version string) {
 func ShowHelp() {
 	fmt.Println("API Interceptor - A fast and lightweight reverse proxy for inspecting API traffic")
 	fmt.Println("\nUsage:")
-	fmt.Println("  api-interceptor [command] [flags]")
+	fmt.Println("  drift [command] [flags]")
 	fmt.Println("\nCommands:")
 	fmt.Println("  serve          Start the API Interceptor server")
 	fmt.Println("  help           Show help information")

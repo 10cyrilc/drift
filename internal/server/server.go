@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"api-interceptor/internal/handlers"
-	"api-interceptor/internal/models"
-	"api-interceptor/internal/tunnel"
+	"drift/internal/handlers"
+	"drift/internal/models"
+	"drift/internal/tunnel"
 )
 
 // Start initializes and starts the HTTP server

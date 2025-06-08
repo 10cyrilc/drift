@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"api-interceptor/internal/models"
+	"drift/internal/models"
 )
 
 // GetStatus handles the status endpoint
