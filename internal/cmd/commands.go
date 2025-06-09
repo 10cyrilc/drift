@@ -23,7 +23,7 @@ func Execute(staticFiles embed.FS, version string) {
 
 	// Handle version flag
 	if *versionFlag {
-		fmt.Printf("API Interceptor version %s\n", version)
+		fmt.Printf("DRIFT version %s\n", version)
 		return
 	}
 
@@ -62,21 +62,21 @@ func Execute(staticFiles embed.FS, version string) {
 
 // ShowHelp displays help information
 func ShowHelp() {
-	fmt.Println("API Interceptor - A fast and lightweight reverse proxy for inspecting API traffic")
+	fmt.Println("DRIFT - A fast and lightweight reverse proxy for inspecting API traffic")
 	fmt.Println("\nUsage:")
 	fmt.Println("  drift [command] [flags]")
 	fmt.Println("\nCommands:")
-	fmt.Println("  serve          Start the API Interceptor server")
+	fmt.Println("  serve          Start DRIFT server")
 	fmt.Println("  help           Show help information")
 	fmt.Println("\nFlags:")
 	fmt.Println("  -p PORT        Port to run the server on (overrides default and environment variable)")
 	fmt.Println("  -v             Show version information")
 	fmt.Println("  -h             Show help information")
 	fmt.Println("\nEnvironment Variables:")
-	fmt.Println("  API_INTERCEPTOR_PORT  Set the server port")
+	fmt.Println("  DRIFT_PORT  Set the server port")
 }
 
-// StartServer starts the API Interceptor server
+// StartServer starts DRIFT server
 func StartServer(portFlag string, staticFiles embed.FS) {
 	// Load configuration
 	cfg := config.Load()
@@ -90,7 +90,7 @@ func StartServer(portFlag string, staticFiles embed.FS) {
 	state := models.NewAppState()
 
 	// Start the server
-	fmt.Println("Starting API Interceptor...")
+	fmt.Println("Starting DRIFT...")
 	err := server.Start(state, staticFiles, cfg.Port)
 	if err != nil {
 		fmt.Printf("Failed to start server: %v\n", err)

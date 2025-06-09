@@ -161,7 +161,7 @@ func startZrokProcess(cmd *exec.Cmd, state *models.AppState, port string) {
 					state.ZrokURL = url
 					state.ZrokMu.Unlock()
 					fmt.Println("=================================================")
-					fmt.Println("Access your API Interceptor at:")
+					fmt.Println("Access DRIFT at:")
 					fmt.Printf("Local URL: http://localhost:%s/inspector/dashboard\n", port)
 					fmt.Println("Public URL:", url)
 					fmt.Println("=================================================")

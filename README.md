@@ -49,7 +49,7 @@ go build
 ./drift -h
 
 # Using environment variable
-API_INTERCEPTOR_PORT=5050 ./drift serve
+DRIFT_PORT=5050 ./drift serve
 ```
 
 ---

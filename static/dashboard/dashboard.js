@@ -358,7 +358,7 @@ function displayRequestDetails(log) {
       </div>
     </div>
 
-    <div class="details-section">
+      <div class="details-section collapsed">
       <div class="section-title">Request Headers</div>
       <div class="section-content">
         <div class="details-table">
@@ -379,7 +379,9 @@ function displayRequestDetails(log) {
       </div>
     </div>
 
-    <div class="details-section">
+  
+
+     <div class="details-section collapsed">
       <div class="section-title">Response Headers</div>
       <div class="section-content">
         <div class="details-table">
@@ -399,6 +401,10 @@ function displayRequestDetails(log) {
         </div>
       </div>
     </div>
+
+   
+
+    
   `;
 
   // Add event listeners for replay buttons

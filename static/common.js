@@ -120,41 +120,68 @@ function hideLoading(elementId) {
 
 // Update status from server
 function updateStatus() {
-  showLoading("server-status");
-  showLoading("localhost-url");
-  showLoading("zrok-url");
-
   fetch("/status")
     .then((response) => response.json())
     .then((data) => {
       const localhostEl = document.getElementById("localhost-url");
-      if (localhostEl) {
-        localhostEl.textContent = `Localhost URL: ${data.localhostURL}`;
+      if (localhostEl && data.localhostURL) {
+        const currentURL = localhostEl.textContent
+          ?.replace("Localhost URL: ", "")
+          .trim();
+
+        if (currentURL !== data.localhostURL) {
+          localhostEl.textContent = `Localhost URL: ${data.localhostURL}`;
+        }
+
         hideLoading("localhost-url");
       }
 
       const serverStatus = data.serverStatus;
       const statusEl = document.getElementById("server-status");
-      if (statusEl) {
-        statusEl.textContent = `Server Status: ${serverStatus}`;
-        hideLoading("server-status");
-        if (serverStatus === "Active") {
-          statusEl.classList.add("connected");
-          statusEl.classList.remove("disconnected");
-        } else {
-          statusEl.classList.add("disconnected");
-          statusEl.classList.remove("connected");
+      if (statusEl && serverStatus) {
+        const currentStatus = statusEl.textContent
+          ?.replace("Server Status: ", "")
+          .trim();
+
+        if (currentStatus !== serverStatus) {
+          statusEl.textContent = `Server Status: ${serverStatus}`;
+
+          if (serverStatus === "Active") {
+            statusEl.classList.add("connected");
+            statusEl.classList.remove("disconnected");
+          } else {
+            statusEl.classList.add("disconnected");
+            statusEl.classList.remove("connected");
+          }
         }
+
+        hideLoading("server-status");
       }
 
       const zrokEl = document.getElementById("zrok-url");
       if (zrokEl) {
-        if (data.zrokURL && data.zrokURL.startsWith("http")) {
-          zrokEl.innerHTML = `Public URL: <a href="${data.zrokURL}" target="_blank">${data.zrokURL}</a>`;
-          zrokEl.classList.add("has-url");
+        const currentContent = zrokEl.textContent
+          ?.replace("Public URL: ", "")
+          .trim();
+        const newURL = data.zrokURL?.trim();
+
+        if (newURL && newURL.startsWith("http")) {
+          if (
+            !zrokEl.classList.contains("has-url") ||
+            currentContent !== newURL
+          ) {
+            zrokEl.innerHTML = `Public URL: <a href="${newURL}" target="_blank">${newURL}</a>`;
+            zrokEl.classList.add("has-url");
+          }
         } else {
-          zrokEl.textContent = `Public URL: ${data.zrokURL || "Not available"}`;
-          zrokEl.classList.remove("has-url");
+          const fallbackText = `Public URL: ${newURL || "Not available"}`;
+          if (
+            zrokEl.textContent !== fallbackText ||
+            zrokEl.classList.contains("has-url")
+          ) {
+            zrokEl.textContent = fallbackText;
+            zrokEl.classList.remove("has-url");
+          }
         }
         hideLoading("zrok-url");
       }

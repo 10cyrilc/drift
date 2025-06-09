@@ -26,8 +26,8 @@ func Start(state *models.AppState, staticFiles embed.FS, port string) error {
 
 	// Start the server
 	fmt.Println("=================================================")
-	fmt.Printf("Starting API Interceptor on port %s\n", port)
-	fmt.Println("Configure your API Interceptor at:")
+	fmt.Printf("Starting DRIFT on port %s\n", port)
+	fmt.Println("Configure DRIFT at:")
 	fmt.Printf("Local URL: http://localhost:%s/inspector/configure\n", port)
 	fmt.Println("=================================================")
 

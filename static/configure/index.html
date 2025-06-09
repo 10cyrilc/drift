@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>API Interceptor - Configure</title>
+    <title>DRIFT - Configure</title>
     <link rel="stylesheet" href="/static/common.css" />
     <link rel="stylesheet" href="/static/configure/configure.css" />
     <link
@@ -13,7 +13,7 @@
   </head>
   <body class="configure-page">
     <div class="container">
-      <h1>API Interceptor</h1>
+      <h1>DRIFT</h1>
       <form id="port-form" action="/configure" method="POST">
         <label for="port">Enter Backend Port:</label>
         <input
@@ -72,18 +72,18 @@
                 type="number"
                 id="zrok_port"
                 name="zrok_port"
-                placeholder="API Interceptor port (e.g. 4040)"
+                placeholder="Interceptor port (e.g. 4040)"
                 disabled
               />
               <span class="help-text"
-                >Enter the API Interceptor port you used when creating this
-                token (usually 4040)</span
+                >Enter the Interceptor port you used when creating this token
+                (usually 4040)</span
               >
             </div>
           </div>
         </div>
 
-        <button type="submit">Start Intercepting</button>
+        <button type="submit">Start Drifting</button>
       </form>
     </div>
     <script src="/static/configure/configure.js"></script>
