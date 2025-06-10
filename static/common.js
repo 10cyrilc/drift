@@ -17,6 +17,16 @@ function getMethodIcon(method) {
   return icons[method] || "http";
 }
 
+// Function to show error messages
+function showError(message, error) {
+  console.error(error);
+  const errorEl = document.getElementById("error-message");
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.add("visible");
+  }
+}
+
 // Example of how to create a method element
 function createMethodElement(method) {
   const methodEl = document.createElement("span");

@@ -13,7 +13,7 @@ type Config struct {
 // Load loads the configuration from environment variables
 func Load() *Config {
 	config := &Config{
-		Port: "4041",
+		Port: "4040",
 	}
 
 	// Check environment variables
