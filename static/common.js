@@ -4,6 +4,105 @@
 let commonWs = null;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
+const DB_NAME = "driftDB";
+const REQUESTS_STORE = "requests";
+const TIMESTAMPS_STORE = "timestamps";
+
+// Initialize IndexedDB
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onerror = (event) => {
+      console.error("IndexedDB error:", event.target.error);
+      reject(event.target.error);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(REQUESTS_STORE)) {
+        db.createObjectStore(REQUESTS_STORE, { keyPath: "request.id" });
+      }
+      if (!db.objectStoreNames.contains(TIMESTAMPS_STORE)) {
+        db.createObjectStore(TIMESTAMPS_STORE, { autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+  });
+}
+
+// Save request to IndexedDB
+function saveRequest(log) {
+  return initDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        [REQUESTS_STORE, TIMESTAMPS_STORE],
+        "readwrite"
+      );
+
+      // Save request data
+      const requestStore = transaction.objectStore(REQUESTS_STORE);
+      requestStore.put(log);
+
+      // Save timestamp
+      const timestamp = new Date(log.request.timestamp).getTime();
+      const timestampStore = transaction.objectStore(TIMESTAMPS_STORE);
+      timestampStore.add(timestamp);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  });
+}
+
+// Get all requests from IndexedDB
+function getAllRequests() {
+  return initDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(REQUESTS_STORE, "readonly");
+      const store = transaction.objectStore(REQUESTS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  });
+}
+
+// Get all timestamps from IndexedDB
+function getAllTimestamps() {
+  return initDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(TIMESTAMPS_STORE, "readonly");
+      const store = transaction.objectStore(TIMESTAMPS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  });
+}
+
+// Clear all data from IndexedDB
+function clearAllData() {
+  return initDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        [REQUESTS_STORE, TIMESTAMPS_STORE],
+        "readwrite"
+      );
+
+      transaction.objectStore(REQUESTS_STORE).clear();
+      transaction.objectStore(TIMESTAMPS_STORE).clear();
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  });
+}
 
 // Function to get appropriate icon for HTTP method
 function getMethodIcon(method) {
@@ -57,18 +156,10 @@ function connectWebSocket(onMessageCallback) {
     try {
       const log = JSON.parse(event.data);
 
-      // Store in sessionStorage for persistence
-      const savedData = sessionStorage.getItem("requestData") || "[]";
-      const requests = JSON.parse(savedData);
-      requests.push(log);
-      sessionStorage.setItem("requestData", JSON.stringify(requests));
-
-      // Store timestamps for graph
-      const savedTimestamps =
-        sessionStorage.getItem("requestTimestamps") || "[]";
-      const timestamps = JSON.parse(savedTimestamps);
-      timestamps.push(new Date(log.request.timestamp).getTime());
-      sessionStorage.setItem("requestTimestamps", JSON.stringify(timestamps));
+      // Save to IndexedDB instead of sessionStorage
+      saveRequest(log).catch((error) => {
+        console.error("Error saving to IndexedDB:", error);
+      });
 
       // Call the page-specific callback if provided
       if (onMessageCallback && typeof onMessageCallback === "function") {

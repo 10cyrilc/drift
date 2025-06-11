@@ -36,8 +36,14 @@ document.addEventListener("DOMContentLoaded", () => {
       })
         .then((response) => {
           if (response.ok) {
-            sessionStorage.clear();
-            window.location.href = "/inspector/dashboard";
+            clearAllData()
+              .then(() => {
+                window.location.href = "/inspector/dashboard";
+              })
+              .catch((error) => {
+                console.error("Failed to clear data:", error);
+                showError("Failed to clear data: " + error.message);
+              });
           } else {
             return response.text().then((text) => {
               throw new Error(text);
@@ -45,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         })
         .catch((error) => {
+          showError("Failed to connect: " + error.message);
           alert("Error: " + error.message);
           button.textContent = originalText;
           button.disabled = false;

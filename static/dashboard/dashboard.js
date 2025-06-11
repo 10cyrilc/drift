@@ -4,31 +4,31 @@
 const requestCache = {};
 let selectedRequestId = null;
 
-// Load saved requests from sessionStorage
 function loadSavedRequests() {
   try {
-    const savedData = sessionStorage.getItem("requestData");
-    if (savedData) {
-      const requests = JSON.parse(savedData);
+    getAllRequests()
+      .then((requests) => {
+        if (requests && requests.length > 0) {
+          // Process each saved request
+          requests.forEach((log) => {
+            requestCache[log.request.id] = log;
+            addRequestToUI(log);
+          });
 
-      // Process each saved request
-      requests.forEach((log) => {
-        requestCache[log.request.id] = log;
-        addRequestToUI(log);
-      });
-
-      // Select the first request if available
-      if (requests.length > 0) {
-        const firstRequestItem = document.querySelector("#requests li");
-        if (firstRequestItem) {
-          firstRequestItem.click();
+          // Select the first request if available
+          const firstRequestItem = document.querySelector("#requests li");
+          if (firstRequestItem) {
+            firstRequestItem.click();
+          }
         }
-      }
-    } else {
-    }
 
-    toggleEmptyState();
+        toggleEmptyState();
+      })
+      .catch((error) => {
+        showError("Dashboard: Error loading saved requests:", error);
+      });
   } catch (error) {
+    console.error(error);
     showError("Dashboard: Error loading saved requests:", error);
   }
 }
@@ -514,8 +514,9 @@ function setupClearRequests() {
 
       // Clear cache and storage
       Object.keys(requestCache).forEach((key) => delete requestCache[key]);
-      sessionStorage.removeItem("requestData");
-      sessionStorage.removeItem("requestTimestamps");
+      clearAllData().catch((error) => {
+        showError("Error clearing data:", error);
+      });
 
       selectedRequestId = null;
       toggleEmptyState();

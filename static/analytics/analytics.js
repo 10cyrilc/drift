@@ -8,25 +8,21 @@ const INNER_HEIGHT = SVG_HEIGHT - MARGIN.top - MARGIN.bottom;
 
 function loadSavedData() {
   try {
-    // Load full request data
-    const savedData = sessionStorage.getItem("requestData");
-    if (savedData) {
-      requestData = JSON.parse(savedData);
+    // Load full request data from IndexedDB
+    Promise.all([getAllRequests(), getAllTimestamps()])
+      .then(([requests, timestamps]) => {
+        if (requests && requests.length > 0) {
+          requestData = requests;
+          requestTimestamps = timestamps;
 
-      // Load timestamps directly if available
-      const savedTimestamps = sessionStorage.getItem("requestTimestamps");
-      if (savedTimestamps) {
-        requestTimestamps = JSON.parse(savedTimestamps);
-      } else {
-        // Extract timestamps from request data as fallback
-        requestTimestamps = requestData.map((log) =>
-          new Date(log.request.timestamp).getTime()
-        );
-      }
-
-      updateAnalytics();
-      updateGraph();
-    }
+          updateAnalytics();
+          updateGraph();
+        }
+      })
+      .catch((error) => {
+        console.errot(error);
+        showError("Error loading saved data:", error);
+      });
   } catch (error) {
     showError("Error loading saved data:", error);
   }
@@ -43,13 +39,6 @@ function connectWebSocket() {
       // Add timestamp for the graph
       const timestamp = new Date(log.request.timestamp).getTime();
       requestTimestamps.push(timestamp);
-
-      // Save to sessionStorage
-      sessionStorage.setItem("requestData", JSON.stringify(requestData));
-      sessionStorage.setItem(
-        "requestTimestamps",
-        JSON.stringify(requestTimestamps)
-      );
 
       updateAnalytics();
       updateGraph();
