@@ -648,3 +648,39 @@ input[type="number"] {
 .footer a:hover {
   text-decoration: underline;
 }
+
+/* Dynamic message styles */
+.dynamic-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 1rem;
+  z-index: 1050;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dynamic-message.info-message {
+  background-color: var(--info-color);
+}
+
+.dynamic-message.error-message {
+  background-color: var(--danger-color);
+}
+
+.dynamic-message.success-message {
+  background-color: var(--success-color);
+}
+
+.dynamic-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
