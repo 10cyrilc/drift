@@ -1,6 +1,9 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -8,17 +11,23 @@ builds:
       - linux
       - windows
       - darwin
+
 archives:
-  - replacements:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
       darwin: Darwin
       linux: Linux
       windows: Windows
       386: i386
       amd64: x86_64
+
 checksum:
   name_template: "checksums.txt"
+
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
