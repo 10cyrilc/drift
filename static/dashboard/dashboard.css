@@ -572,15 +572,55 @@
   resize: vertical;
 }
 
+.editor-row input:focus,
+.editor-row select:focus,
+.editor-row textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(97, 176, 255, 0.1);
+}
+
 .editor-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px;
+  gap: 10px;
+  padding: 15px 20px;
+  background-color: var(--darker-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.editor-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.editor-btn.primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.editor-btn.primary:hover {
+  background-color: var(--primary-light);
+}
+
+.editor-btn.secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-light);
+}
+
+.editor-btn.secondary:hover {
+  background-color: var(--light-color);
 }
 
 @keyframes slide-in {
   from {
-    transform: translateY(100px);
+    transform: translateY(20px);
     opacity: 0;
   }
   to {

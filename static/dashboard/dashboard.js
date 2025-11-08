@@ -609,12 +609,12 @@ function showRequestEditor(log) {
   modal.innerHTML = `
     <div class="request-editor">
       <div class="editor-header">
-        <h3>Edit Request</h3>
+        <h3>Edit and Replay Request</h3>
         <button class="close-btn">&times;</button>
       </div>
       <div class="editor-content">
         <div class="editor-row">
-          <label>Method:</label>
+          <label for="edit-method">Method</label>
           <select id="edit-method">
             <option value="GET" ${
               log.request.method === "GET" ? "selected" : ""
@@ -634,22 +634,23 @@ function showRequestEditor(log) {
           </select>
         </div>
         <div class="editor-row">
-          <label>URL:</label>
+          <label for="edit-url">URL</label>
           <input type="text" id="edit-url" value="${log.request.url}">
         </div>
         <div class="editor-row">
-          <label>Headers:</label>
+          <label for="edit-headers">Headers</label>
           <textarea id="edit-headers" rows="5">${formatHeadersForEdit(
             log.request.headers
           )}</textarea>
         </div>
         <div class="editor-row">
-          <label>Body:</label>
+          <label for="edit-body">Body</label>
           <textarea id="edit-body" rows="10">${bodyContent}</textarea>
         </div>
-        <div class="editor-actions">
-          <button id="send-request" class="action-btn">Send Request</button>
-        </div>
+      </div>
+      <div class="editor-actions">
+        <button id="cancel-edit" class="editor-btn secondary">Cancel</button>
+        <button id="send-request" class="editor-btn primary">Send Request</button>
       </div>
     </div>
   `;
@@ -660,6 +661,10 @@ function showRequestEditor(log) {
   // Add event listeners
   modal.querySelector(".close-btn").addEventListener("click", () => {
     document.body.removeChild(modal);
+
+    modal.querySelector("#cancel-edit").addEventListener("click", () => {
+      document.body.removeChild(modal);
+    });
   });
 
   modal.querySelector("#send-request").addEventListener("click", () => {
