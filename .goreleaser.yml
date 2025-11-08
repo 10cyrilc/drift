@@ -13,20 +13,19 @@ builds:
       - darwin
 
 archives:
-  - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+  - id: default
+    wrap_in_directory: true
+    files:
+      - LICENSE*
+      - README*
+      - none*
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ replace .Arch "amd64" "x86_64" | replace "386" "i386" }}'
 
 checksum:
   name_template: "checksums.txt"
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
