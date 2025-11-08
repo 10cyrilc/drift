@@ -13,12 +13,15 @@ import (
 
 // Execute parses command line arguments and executes the appropriate command
 func Execute(staticFiles embed.FS, version string) {
-	// Define flags
-	portFlag := flag.String("p", "", "Port to run the server on")
+	// Define top-level flags
 	versionFlag := flag.Bool("v", false, "Show version information")
 	helpFlag := flag.Bool("h", false, "Show help information")
 
-	// Parse flags
+	// Define subcommand for "serve"
+	serveCmd := flag.NewFlagSet("serve", flag.ExitOnError)
+	portFlag := serveCmd.String("p", "", "Port to run the server on")
+
+	// Parse top-level flags
 	flag.Parse()
 
 	// Handle version flag
@@ -35,28 +38,20 @@ func Execute(staticFiles embed.FS, version string) {
 	}
 
 	// If no arguments or flags are provided, show help
-	if flag.NFlag() == 0 && len(args) == 0 {
+	if len(args) == 0 {
 		ShowHelp()
 		return
 	}
 
 	// Handle commands
-	if len(args) > 0 {
-		switch args[0] {
-		case "serve":
-			StartServer(*portFlag, staticFiles)
-			return
-		default:
-			fmt.Printf("Unknown command: %s\n", args[0])
-			ShowHelp()
-			return
-		}
-	}
-
-	// If only port flag is provided, start server
-	if *portFlag != "" {
+	switch args[0] {
+	case "serve":
+		// Parse flags for the "serve" command
+		serveCmd.Parse(args[1:])
 		StartServer(*portFlag, staticFiles)
-		return
+	default:
+		fmt.Printf("Unknown command: %s\n", args[0])
+		ShowHelp()
 	}
 }
 
@@ -64,16 +59,16 @@ func Execute(staticFiles embed.FS, version string) {
 func ShowHelp() {
 	fmt.Println("DRIFT - A fast and lightweight reverse proxy for inspecting API traffic")
 	fmt.Println("\nUsage:")
-	fmt.Println("  drift [command] [flags]")
+	fmt.Println("  drift [command]")
 	fmt.Println("\nCommands:")
-	fmt.Println("  serve          Start DRIFT server")
+	fmt.Println("  serve [flags]  Start DRIFT server")
+	fmt.Println("    -p PORT      Port to run the server on (overrides default and environment variable)")
 	fmt.Println("  help           Show help information")
-	fmt.Println("\nFlags:")
-	fmt.Println("  -p PORT        Port to run the server on (overrides default and environment variable)")
+	fmt.Println("\nGlobal Flags:")
 	fmt.Println("  -v             Show version information")
 	fmt.Println("  -h             Show help information")
 	fmt.Println("\nEnvironment Variables:")
-	fmt.Println("  DRIFT_PORT  Set the server port")
+	fmt.Println("  DRIFT_PORT     Set the server port")
 }
 
 // StartServer starts DRIFT server
