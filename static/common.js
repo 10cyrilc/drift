@@ -116,14 +116,48 @@ function getMethodIcon(method) {
   return icons[method] || "http";
 }
 
+function showInfo(message) {
+  showMessage(message, "info");
+}
+
 // Function to show error messages
 function showError(message, error) {
-  console.error(error);
-  const errorEl = document.getElementById("error-message");
-  if (errorEl) {
-    errorEl.textContent = message;
-    errorEl.classList.add("visible");
+  if (error) {
+    console.error(error);
   }
+  showMessage(message, "error");
+}
+
+function showSuccess(message) {
+  showMessage(message, "success");
+}
+
+// Generic function to show messages
+function showMessage(message, type) {
+  const existingMessage = document.querySelector(".dynamic-message");
+  if (existingMessage) {
+    existingMessage.remove();
+  }
+
+  const messageEl = document.createElement("div");
+  messageEl.className = `dynamic-message ${type}-message`;
+  messageEl.textContent = message;
+
+  document.body.appendChild(messageEl);
+
+  // Trigger the animation
+  setTimeout(() => {
+    messageEl.classList.add("visible");
+  }, 10);
+
+  // Automatically hide after 5 seconds
+  setTimeout(() => {
+    messageEl.classList.remove("visible");
+    // Remove the element after the transition ends
+    messageEl.addEventListener("transitionend", () => {
+      messageEl.remove();
+    });
+  }, 5000);
 }
 
 // Example of how to create a method element
