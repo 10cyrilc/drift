@@ -401,10 +401,6 @@ function displayRequestDetails(log) {
         </div>
       </div>
     </div>
-
-   
-
-    
   `;
 
   // Add event listeners for replay buttons
@@ -649,7 +645,6 @@ function showRequestEditor(log) {
         </div>
       </div>
       <div class="editor-actions">
-        <button id="cancel-edit" class="editor-btn secondary">Cancel</button>
         <button id="send-request" class="editor-btn primary">Send Request</button>
       </div>
     </div>
@@ -661,10 +656,6 @@ function showRequestEditor(log) {
   // Add event listeners
   modal.querySelector(".close-btn").addEventListener("click", () => {
     document.body.removeChild(modal);
-
-    modal.querySelector("#cancel-edit").addEventListener("click", () => {
-      document.body.removeChild(modal);
-    });
   });
 
   modal.querySelector("#send-request").addEventListener("click", () => {
