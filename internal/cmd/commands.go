@@ -51,6 +51,11 @@ func Execute(staticFiles embed.FS, version string) {
 		StartServer(*portFlag, staticFiles)
 	case "update":
 		Update(version)
+	case "release":
+		args := flag.Args()
+		all := len(args) > 1 && args[1] == "all"
+		Release(all)
+
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		ShowHelp()
@@ -66,6 +71,7 @@ func ShowHelp() {
 	fmt.Println("  serve [flags]  Start DRIFT server")
 	fmt.Println("    -p PORT      Port to run the server on (overrides default and environment variable)")
 	fmt.Println("  update         Update DRIFT to the latest version")
+	fmt.Println("  release        Release a reserved zrok token")
 	fmt.Println("  help           Show help information")
 	fmt.Println("\nGlobal Flags:")
 	fmt.Println("  -v             Show version information")
