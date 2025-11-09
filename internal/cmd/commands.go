@@ -49,6 +49,8 @@ func Execute(staticFiles embed.FS, version string) {
 		// Parse flags for the "serve" command
 		serveCmd.Parse(args[1:])
 		StartServer(*portFlag, staticFiles)
+	case "update":
+		Update(version)
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		ShowHelp()
@@ -63,6 +65,7 @@ func ShowHelp() {
 	fmt.Println("\nCommands:")
 	fmt.Println("  serve [flags]  Start DRIFT server")
 	fmt.Println("    -p PORT      Port to run the server on (overrides default and environment variable)")
+	fmt.Println("  update         Update DRIFT to the latest version")
 	fmt.Println("  help           Show help information")
 	fmt.Println("\nGlobal Flags:")
 	fmt.Println("  -v             Show version information")
