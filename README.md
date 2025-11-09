@@ -48,6 +48,9 @@ go build
 # Show help information
 ./drift -h
 
+# Update
+./drift update
+
 # Using environment variable
 DRIFT_PORT=5050 ./drift serve
 ```
@@ -134,6 +137,7 @@ drift/
 - Dependencies:
   - github.com/google/uuid
   - github.com/gorilla/websocket
+  - github.com/rhysd/go-github-selfupdate
 
 ---
 
