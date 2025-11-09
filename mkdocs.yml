@@ -41,6 +41,10 @@ repo_url: https://github.com/10cyrilc/drift
 extra_css:
   - stylesheets/extra.css
 
+# Extra JavaScript for mobile optimization
+extra_javascript:
+  - javascripts/mobile.js
+
 # Extensions
 markdown_extensions:
   - pymdownx.highlight:
