@@ -1,0 +1,14 @@
+site_name: DRIFT Documentation
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Commands:
+      - Overview: commands.md
+      - serve: commands/serve.md
+      - update: commands/update.md
+      - release: commands/release.md
+  - Support: support.md
+  - Contributing: contributing.md
