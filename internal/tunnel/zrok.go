@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -43,12 +44,8 @@ func ReserveZrokToken(port string) (string, string, error) {
 	return tokenMatch[1], urlMatch[1], nil
 }
 
-// ReleaseZrokToken releases a reserved zrok token
+// ReleaseZrokToken releases a reserved zrok token.
 func ReleaseZrokToken(token string) error {
-	if token == "" {
-		return nil // No token to release
-	}
-
 	zrokPath, err := exec.LookPath("zrok")
 	if err != nil {
 		return fmt.Errorf("zrok not found: %v", err)
@@ -57,10 +54,68 @@ func ReleaseZrokToken(token string) error {
 	cmd := exec.Command(zrokPath, "release", token)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to release zrok token: %v, output: %s", err, output)
+		return fmt.Errorf("failed to unreserve token %s: %v, output: %s", token, err, output)
+	}
+	return nil
+}
+
+// GetAllReservedZrokTokens retrieves all reserved zrok share tokens
+func GetAllReservedZrokTokens() ([]string, error) {
+	zrokPath, err := exec.LookPath("zrok")
+	if err != nil {
+		return nil, fmt.Errorf("zrok not found: %v", err)
 	}
 
-	return nil
+	// Prefer JSON output if available
+	cmd := exec.Command(zrokPath, "overview", "--json")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Retry without --json in case version doesn't support it
+		cmd = exec.Command(zrokPath, "overview")
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get zrok overview: %v, output: %s", err, output)
+		}
+	}
+
+	outputStr := strings.TrimSpace(string(output))
+
+	// Try JSON parse first
+	var jsonData struct {
+		Environments []struct {
+			Shares []struct {
+				Reserved   bool   `json:"reserved"`
+				ShareToken string `json:"shareToken"`
+			} `json:"shares"`
+		} `json:"environments"`
+	}
+
+	if json.Unmarshal([]byte(outputStr), &jsonData) == nil {
+		var tokens []string
+		for _, env := range jsonData.Environments {
+			for _, share := range env.Shares {
+				if share.Reserved {
+					tokens = append(tokens, share.ShareToken)
+				}
+			}
+		}
+		if len(tokens) > 0 {
+			return tokens, nil
+		}
+	}
+
+	// Fallback: regex parse if JSON failed
+	tokenRegex := regexp.MustCompile(`reserved share token:\s*([a-zA-Z0-9]+)`)
+	matches := tokenRegex.FindAllStringSubmatch(outputStr, -1)
+
+	var tokens []string
+	for _, match := range matches {
+		if len(match) > 1 {
+			tokens = append(tokens, match[1])
+		}
+	}
+
+	return tokens, nil
 }
 
 // StartZrok starts a zrok tunnel for public access
