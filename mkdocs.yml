@@ -1,0 +1,83 @@
+site_name: DRIFT Documentation
+site_description: Documentation for DRIFT - Dynamic Request Interception and Forwarding Tool
+site_url: https://10cyrilc.github.io/drift
+
+theme:
+  name: material
+  palette:
+    # Dark mode (default)
+    - scheme: slate
+      primary: blue
+      accent: cyan
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  features:
+    - navigation.instant      # Instant loading
+    - navigation.tracking     # Anchor tracking
+    - navigation.sections     # Sections in navigation
+    - navigation.expand       # Expand sections by default
+    - navigation.top          # Back to top button
+    - navigation.indexes      # Section index pages
+    - toc.follow              # TOC follows scrolling
+    - search.suggest          # Search suggestions
+    - search.highlight        # Highlight search terms
+    - search.share            # Share search results
+    - content.code.copy       # Copy button for code blocks
+    - content.code.annotate   # Code annotations
+    - content.tabs.link       # Link content tabs
+
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/rocket-launch
+
+# Repository information (optional)
+repo_name: 10cyrilc/drift
+repo_url: https://github.com/10cyrilc/drift
+
+# Extra CSS for additional customization
+extra_css:
+  - stylesheets/extra.css
+
+# Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/10cyrilc
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/10cyrilc
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Commands:
+      - Overview: commands.md
+      - serve: commands/serve.md
+      - update: commands/update.md
+      - release: commands/release.md
+  - Support: support.md
+  - Contributing: contributing.md
