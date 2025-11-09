@@ -50,4 +50,4 @@ changelog:
       - "^deps:"
       - "^fix(deps):"
       - "^test:"
-      - "^bump:"
+      - "(?i)^bump"
