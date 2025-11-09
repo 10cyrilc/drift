@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
@@ -31,17 +34,42 @@ func Update(currentVersion string) {
 		return
 	}
 
-	binaryName := "drift"
-	if runtime.GOOS == "windows" {
-		binaryName += ".exe"
-	}
+	fmt.Printf("New version available: %s → %s\n", v, latest.Version)
 
-	fmt.Printf("Updating to version %s...\n", latest.Version)
-	err = updater.UpdateTo(latest, binaryName)
+	exePath, err := os.Executable()
+	if err != nil {
+		fmt.Println("❌ Could not determine executable path:", err)
+		return
+	}
+	exePath, _ = filepath.EvalSymlinks(exePath)
+
+	// Simple spinner animation using only fmt + time
+	done := make(chan bool)
+	go func() {
+		spinChars := []rune{'|', '/', '-', '\\'}
+		i := 0
+		for {
+			select {
+			case <-done:
+				fmt.Printf("\r") // clear spinner line
+				return
+			default:
+				fmt.Printf("\r⬇️  Downloading update... %c", spinChars[i%len(spinChars)])
+				time.Sleep(100 * time.Millisecond)
+				i++
+			}
+		}
+	}()
+
+	err = updater.UpdateTo(latest, exePath)
+	done <- true
 	if err != nil {
 		fmt.Println("😟 Error during update:", err)
 		return
 	}
 
 	fmt.Printf("✅ Successfully updated to version %s\n", latest.Version)
+	if runtime.GOOS == "windows" {
+		fmt.Printf("📁 Updated binary: %s\n", exePath)
+	}
 }
