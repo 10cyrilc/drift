@@ -31,7 +31,7 @@
 
 .md-nav--primary .md-nav__link {
   font-size: 0.875rem;
-  padding: 0.6rem 0.8rem;
+  padding: 0.4rem 1.8rem;
   line-height: 1.5;
 }
 
@@ -93,7 +93,7 @@
 
 /* Add icon/indicator before section titles */
 .md-nav__item--nested > .md-nav__link::before {
-  content: "▾";
+  content: "-";
   margin-right: 0.4rem;
   font-size: 0.8rem;
   opacity: 0.7;
@@ -105,14 +105,13 @@
 }
 
 .md-nav__item--nested .md-nav__item .md-nav__link {
-  padding-left: 2rem;
+  padding-left: 3rem;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
 /* Add subtle line to show hierarchy */
 .md-nav__item--nested .md-nav__item .md-nav__link::before {
-  content: "";
   position: absolute;
   left: 1rem;
   top: 50%;
