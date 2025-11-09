@@ -21,4 +21,3 @@ jobs:
       - name: Deploy
         run: |
           mkdocs gh-deploy --force
-        working-directory: ./docs
