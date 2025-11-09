@@ -10,7 +10,7 @@ import (
 var staticFiles embed.FS
 
 // Version of the application
-const Version = "0.1.3"
+const Version = "0.1.4"
 
 func main() {
 	cmd.Execute(staticFiles, Version)
