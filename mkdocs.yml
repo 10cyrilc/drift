@@ -1,5 +1,5 @@
 site_name: DRIFT Documentation
-site_description: Documentation for DRIFT - Your project description here
+site_description: Documentation for DRIFT - Dynamic Request Interception and Forwarding Tool
 site_url: https://10cyrilc.github.io/drift
 
 theme:
