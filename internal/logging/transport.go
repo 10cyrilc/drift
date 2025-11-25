@@ -2,12 +2,14 @@ package logging
 
 import (
 	"bytes"
+	"compress/gzip"
 	"io"
 	"net/http"
 	"time"
 
 	"drift/internal/models"
 
+	"github.com/andybalholm/brotli"
 	"github.com/google/uuid"
 )
 
@@ -63,7 +65,28 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var respBody []byte
 	if resp.Body != nil {
 		respBody, _ = io.ReadAll(resp.Body)
-		respLog.Body = string(respBody)
+		contentEncoding := resp.Header.Get("Content-Encoding")
+		switch contentEncoding {
+		case "gzip":
+			reader, err := gzip.NewReader(bytes.NewReader(respBody))
+			if err == nil {
+				decompressedBody, _ := io.ReadAll(reader)
+				respLog.Body = string(decompressedBody)
+				reader.Close()
+			} else {
+				respLog.Body = string(respBody)
+			}
+		case "br":
+			reader := brotli.NewReader(bytes.NewReader(respBody))
+			decompressedBody, err := io.ReadAll(reader)
+			if err == nil {
+				respLog.Body = string(decompressedBody)
+			} else {
+				respLog.Body = string(respBody)
+			}
+		default:
+			respLog.Body = string(respBody)
+		}
 		resp.Body = io.NopCloser(bytes.NewReader(respBody))
 	}
 
