@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"drift/internal/models"
+
+	"github.com/google/uuid"
 )
 
 // getZrokPath searches for zrok2 or zrok in the PATH and returns the path.
@@ -27,11 +29,39 @@ func getZrokPath() (string, error) {
 	return "", fmt.Errorf("neither zrok2 nor zrok found in PATH")
 }
 
+// isZrokV2 checks if the zrok binary at the given path is version 2.
+func isZrokV2(zrokPath string) bool {
+	cmd := exec.Command(zrokPath, "version")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return strings.Contains(strings.ToLower(zrokPath), "zrok2")
+	}
+	return strings.Contains(string(output), "v2.")
+}
+
 // ReserveZrokToken reserves a new zrok share token for a specific port
 func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
 	zrokPath, err := getZrokPath()
 	if err != nil {
 		return "", "", fmt.Errorf("zrok not found: %v", err)
+	}
+
+	isV2 := isZrokV2(zrokPath)
+
+	if isV2 {
+		if uniqueName == "" {
+			u := uuid.New().String()
+			uniqueName = "drift-" + strings.ReplaceAll(u, "-", "")[:8]
+		}
+
+		cmd := exec.Command(zrokPath, "create", "name", uniqueName)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return "", "", fmt.Errorf("failed to reserve zrok name: %v, output: %s", err, output)
+		}
+
+		url := fmt.Sprintf("https://%s.shares.zrok.io", uniqueName)
+		return uniqueName, url, nil
 	}
 
 	args := []string{"reserve", "public", "--backend-mode", "proxy"}
@@ -68,7 +98,14 @@ func ReleaseZrokToken(token string) error {
 		return fmt.Errorf("zrok not found: %v", err)
 	}
 
-	cmd := exec.Command(zrokPath, "release", token)
+	isV2 := isZrokV2(zrokPath)
+	var cmd *exec.Cmd
+	if isV2 {
+		cmd = exec.Command(zrokPath, "delete", "name", token)
+	} else {
+		cmd = exec.Command(zrokPath, "release", token)
+	}
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to unreserve token %s: %v, output: %s", token, err, output)
@@ -81,6 +118,40 @@ func GetAllReservedZrokTokens() ([]string, error) {
 	zrokPath, err := getZrokPath()
 	if err != nil {
 		return nil, fmt.Errorf("zrok not found: %v", err)
+	}
+
+	isV2 := isZrokV2(zrokPath)
+
+	if isV2 {
+		cmd := exec.Command(zrokPath, "list", "names", "--json")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list zrok names: %v, output: %s", err, output)
+		}
+
+		var jsonData2 []struct {
+			Name string `json:"name"`
+		}
+
+		if err := json.Unmarshal(output, &jsonData2); err == nil {
+			var tokens []string
+			for _, item := range jsonData2 {
+				tokens = append(tokens, item.Name)
+			}
+			return tokens, nil
+		}
+
+		// Fallback: regex parse the table
+		outputStr := string(output)
+		tokenRegex := regexp.MustCompile(`│\s*([a-zA-Z0-9\-]+)\s*│\s*[a-zA-Z0-9\-]+\s*│`)
+		matches := tokenRegex.FindAllStringSubmatch(outputStr, -1)
+		var tokens []string
+		for _, match := range matches {
+			if len(match) > 1 {
+				tokens = append(tokens, strings.TrimSpace(match[1]))
+			}
+		}
+		return tokens, nil
 	}
 
 	// Prefer JSON output if available
@@ -122,7 +193,7 @@ func GetAllReservedZrokTokens() ([]string, error) {
 	}
 
 	// Fallback: regex parse if JSON failed
-	tokenRegex := regexp.MustCompile(`reserved share token:\s*([a-zA-Z0-9]+)`)
+	tokenRegex := regexp.MustCompile(`reserved share token:\s*([a-zA-Z0-9\-]+)`)
 	matches := tokenRegex.FindAllStringSubmatch(outputStr, -1)
 
 	var tokens []string
@@ -169,10 +240,17 @@ func StartZrok(state *models.AppState, port string) {
 	tokenPort := state.Config.ZrokPort
 	state.ConfigMu.Unlock()
 
+	isV2 := isZrokV2(zrokPath)
+
 	// Check if we have a valid token
 	if reservedToken == "" {
 		fmt.Println("No reserved token available, using random public share")
-		cmd := exec.Command(zrokPath, "share", "public", "--backend-mode", "proxy", port)
+		var cmd *exec.Cmd
+		if isV2 {
+			cmd = exec.Command(zrokPath, "share", "public", port, "--headless")
+		} else {
+			cmd = exec.Command(zrokPath, "share", "public", "--backend-mode", "proxy", port)
+		}
 		startZrokProcess(cmd, state, port)
 		return
 	}
@@ -184,7 +262,12 @@ func StartZrok(state *models.AppState, port string) {
 	}
 
 	// Create the command for reserved token
-	cmd := exec.Command(zrokPath, "share", "reserved", reservedToken)
+	var cmd *exec.Cmd
+	if isV2 {
+		cmd = exec.Command(zrokPath, "share", "public", port, "-n", "public:"+reservedToken, "--headless")
+	} else {
+		cmd = exec.Command(zrokPath, "share", "reserved", reservedToken)
+	}
 	fmt.Println("Using reserved zrok token:", reservedToken)
 	startZrokProcess(cmd, state, port)
 }
@@ -224,20 +307,23 @@ func startZrokProcess(cmd *exec.Cmd, state *models.AppState, port string) {
 				return
 			default:
 				line := scanner.Text()
-				if strings.Contains(line, "http") && strings.Contains(line, "zrok.io") {
+				if strings.Contains(line, "zrok.io") {
 
-					re := regexp.MustCompile(`https://[a-zA-Z0-9\-]+\.share\.zrok\.io`)
-					url := re.FindString(line)
+					re := regexp.MustCompile(`(?:https://)?([a-zA-Z0-9\-]+\.(?:share|shares)\.zrok\.io)`)
+					match := re.FindStringSubmatch(line)
+					if len(match) > 1 {
+						url := "https://" + match[1]
 
-					state.ZrokMu.Lock()
-					state.ZrokURL = url
-					state.ZrokMu.Unlock()
-					fmt.Println("=================================================")
-					fmt.Println("Access DRIFT at:")
-					fmt.Printf("Local URL: http://localhost:%s/inspector/dashboard\n", port)
-					fmt.Println("Public URL:", url)
-					fmt.Println("=================================================")
-					return
+						state.ZrokMu.Lock()
+						state.ZrokURL = url
+						state.ZrokMu.Unlock()
+						fmt.Println("=================================================")
+						fmt.Println("Access DRIFT at:")
+						fmt.Printf("Local URL: http://localhost:%s/inspector/dashboard\n", port)
+						fmt.Println("Public URL:", url)
+						fmt.Println("=================================================")
+						return
+					}
 				}
 			}
 		}
