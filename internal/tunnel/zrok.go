@@ -16,14 +16,31 @@ import (
 	"drift/internal/models"
 )
 
+// getZrokPath searches for zrok2 or zrok in the PATH and returns the path.
+func getZrokPath() (string, error) {
+	if path, err := exec.LookPath("zrok2"); err == nil {
+		return path, nil
+	}
+	if path, err := exec.LookPath("zrok"); err == nil {
+		return path, nil
+	}
+	return "", fmt.Errorf("neither zrok2 nor zrok found in PATH")
+}
+
 // ReserveZrokToken reserves a new zrok share token for a specific port
-func ReserveZrokToken(port string) (string, string, error) {
-	zrokPath, err := exec.LookPath("zrok")
+func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
+	zrokPath, err := getZrokPath()
 	if err != nil {
 		return "", "", fmt.Errorf("zrok not found: %v", err)
 	}
 
-	cmd := exec.Command(zrokPath, "reserve", "public", "--backend-mode", "proxy", port)
+	args := []string{"reserve", "public", "--backend-mode", "proxy"}
+	if uniqueName != "" {
+		args = append(args, "--unique-name", uniqueName)
+	}
+	args = append(args, port)
+
+	cmd := exec.Command(zrokPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to reserve zrok token: %v, output: %s", err, output)
@@ -46,7 +63,7 @@ func ReserveZrokToken(port string) (string, string, error) {
 
 // ReleaseZrokToken releases a reserved zrok token.
 func ReleaseZrokToken(token string) error {
-	zrokPath, err := exec.LookPath("zrok")
+	zrokPath, err := getZrokPath()
 	if err != nil {
 		return fmt.Errorf("zrok not found: %v", err)
 	}
@@ -61,7 +78,7 @@ func ReleaseZrokToken(token string) error {
 
 // GetAllReservedZrokTokens retrieves all reserved zrok share tokens
 func GetAllReservedZrokTokens() ([]string, error) {
-	zrokPath, err := exec.LookPath("zrok")
+	zrokPath, err := getZrokPath()
 	if err != nil {
 		return nil, fmt.Errorf("zrok not found: %v", err)
 	}
@@ -126,7 +143,7 @@ func StartZrok(state *models.AppState, port string) {
 	state.ZrokMu.Unlock()
 
 	// Check if zrok is installed
-	zrokPath, err := exec.LookPath("zrok")
+	zrokPath, err := getZrokPath()
 	if err != nil {
 		fmt.Println("Zrok not found. Public URL will not be available.")
 		state.ZrokMu.Lock()

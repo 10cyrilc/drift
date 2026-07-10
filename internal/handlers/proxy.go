@@ -37,9 +37,13 @@ func ConfigureProxy(state *models.AppState, proxyPort string) http.HandlerFunc {
 		state.ConfigMu.Lock()
 		existingToken := ""
 		existingURL := ""
+		existingUniqueName := ""
+		existingOption := ""
 		if state.Config != nil && state.Config.ZrokToken != "" && state.Config.ZrokPort == proxyPort {
 			existingToken = state.Config.ZrokToken
 			existingURL = state.Config.ZrokURL
+			existingUniqueName = state.Config.ZrokUniqueName
+			existingOption = state.Config.ZrokOption
 		}
 		state.ConfigMu.Unlock()
 
@@ -50,30 +54,50 @@ func ConfigureProxy(state *models.AppState, proxyPort string) http.HandlerFunc {
 			if token != "" && tokenPort != "" {
 				config.ZrokToken = token
 				config.ZrokPort = tokenPort
+				config.ZrokUniqueName = ""
+				config.ZrokOption = "custom"
 
 				// Warn if the port doesn't match
 				if tokenPort != proxyPort {
 					fmt.Printf("Warning: Using token for port %s with current proxy port %s\n", tokenPort, proxyPort)
 				}
 			}
+		} else if zrokOption == "reserve" {
+			// Reserve mode
+			uniqueName := r.FormValue("zrok_unique_name")
+			token, url, err := tunnel.ReserveZrokToken(proxyPort, uniqueName)
+			if err != nil {
+				fmt.Printf("Failed to reserve zrok token: %v\n", err)
+			} else {
+				config.ZrokToken = token
+				config.ZrokURL = url
+				config.ZrokPort = proxyPort
+				config.ZrokUniqueName = uniqueName
+				config.ZrokOption = "reserve"
+				fmt.Printf("Reserved new zrok token: %s for port %s, URL: %s\n", token, proxyPort, url)
+			}
 		} else {
-			// Auto mode: use existing token or create new one
+			// Auto mode: use existing token or create new random one
 			if existingToken != "" {
 				// Reuse existing token for this port
 				fmt.Printf("Reusing existing zrok token: %s for port %s\n", existingToken, proxyPort)
 				config.ZrokToken = existingToken
 				config.ZrokURL = existingURL
 				config.ZrokPort = proxyPort
+				config.ZrokUniqueName = existingUniqueName
+				config.ZrokOption = existingOption
 			} else {
-				// Create a new token
-				token, url, err := tunnel.ReserveZrokToken(proxyPort)
+				// Create a new random token
+				token, url, err := tunnel.ReserveZrokToken(proxyPort, "")
 				if err != nil {
-					fmt.Printf("Failed to reserve zrok token: %v\n", err)
+					fmt.Printf("Failed to reserve random zrok token: %v\n", err)
 				} else {
 					config.ZrokToken = token
 					config.ZrokURL = url
 					config.ZrokPort = proxyPort
-					fmt.Printf("Reserved new zrok token: %s for port %s, URL: %s\n", token, proxyPort, url)
+					config.ZrokUniqueName = ""
+					config.ZrokOption = "auto"
+					fmt.Printf("Reserved new random zrok token: %s for port %s, URL: %s\n", token, proxyPort, url)
 				}
 			}
 		}

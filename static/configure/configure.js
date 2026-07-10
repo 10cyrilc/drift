@@ -1,25 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("port-form");
-  const tokenInput = document.getElementById("zrok_token");
-  const portInput = document.getElementById("zrok_port");
-  const tokenInputs = document.querySelector(".token-inputs");
-  const radioButtons = document.querySelectorAll('input[name="zrok_option"]');
-
-  // Initially hide the token inputs
-  tokenInputs.style.display = "none";
-
-  radioButtons.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      const isCustom = radio.value === "custom";
-      tokenInput.disabled = !isCustom;
-      portInput.disabled = !isCustom;
-      tokenInputs.style.display = isCustom ? "block" : "none";
-
-      if (isCustom) {
-        tokenInput.focus();
-      }
-    });
-  });
 
   if (form) {
     form.addEventListener("submit", (e) => {

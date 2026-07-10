@@ -22,10 +22,19 @@ func GetStatus(state *models.AppState) http.HandlerFunc {
 			localhostURL = state.Config.BackendURL.String()
 		}
 
+		zrokUniqueName := ""
+		zrokOption := ""
+		if state.Config != nil {
+			zrokUniqueName = state.Config.ZrokUniqueName
+			zrokOption = state.Config.ZrokOption
+		}
+
 		response := models.StatusResponse{
-			ServerStatus: state.ServerStatus,
-			LocalhostURL: localhostURL,
-			ZrokURL:      state.ZrokURL,
+			ServerStatus:   state.ServerStatus,
+			LocalhostURL:   localhostURL,
+			ZrokURL:        state.ZrokURL,
+			ZrokUniqueName: zrokUniqueName,
+			ZrokOption:     zrokOption,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
