@@ -101,6 +101,10 @@ func ReleaseZrokToken(token string) error {
 	isV2 := isZrokV2(zrokPath)
 	var cmd *exec.Cmd
 	if isV2 {
+		// First delete the share associated with the name (ignoring error in case it doesn't exist or is already deleted)
+		delShareCmd := exec.Command(zrokPath, "delete", "share", token)
+		_ = delShareCmd.Run()
+
 		cmd = exec.Command(zrokPath, "delete", "name", token)
 	} else {
 		cmd = exec.Command(zrokPath, "release", token)
