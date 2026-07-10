@@ -37,12 +37,14 @@ type APILog struct {
 
 // ProxyConfig holds the configuration for the reverse proxy
 type ProxyConfig struct {
-	BackendURL  *url.URL
-	Proxy       *httputil.ReverseProxy
-	BackendPort string
-	ZrokToken   string
-	ZrokURL     string
-	ZrokPort    string
+	BackendURL     *url.URL
+	Proxy          *httputil.ReverseProxy
+	BackendPort    string
+	ZrokToken      string
+	ZrokURL        string
+	ZrokPort       string
+	ZrokUniqueName string
+	ZrokOption     string
 }
 
 // AppState holds the global application state
@@ -73,7 +75,9 @@ func NewAppState() *AppState {
 
 // StatusResponse represents the response for the status endpoint
 type StatusResponse struct {
-	ServerStatus string `json:"serverStatus"`
-	LocalhostURL string `json:"localhostURL"`
-	ZrokURL      string `json:"zrokURL"`
+	ServerStatus   string `json:"serverStatus"`
+	LocalhostURL   string `json:"localhostURL"`
+	ZrokURL        string `json:"zrokURL"`
+	ZrokUniqueName string `json:"zrokUniqueName"`
+	ZrokOption     string `json:"zrokOption"`
 }

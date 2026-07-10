@@ -31,6 +31,7 @@ body {
   background-color: var(--darker-color);
   color: var(--text-color);
   line-height: 1.6;
+  font-family: monospace;
 }
 
 /* Method & Status Code Colors */
@@ -47,15 +48,19 @@ body {
 .method-get {
   color: #61b0ff;
 }
+
 .method-post {
   color: #4ade80;
 }
+
 .method-put {
   color: #fbbf24;
 }
+
 .method-delete {
   color: #f87171;
 }
+
 .method-patch {
   color: #c084fc;
 }
@@ -180,11 +185,13 @@ body {
   transition: width 0.3s ease;
   z-index: 100;
   overflow-x: hidden;
-  width: 60px; /* Collapsed state */
+  width: 60px;
+  /* Collapsed state */
 }
 
 .sidebar.expanded {
-  width: 220px; /* Expanded state */
+  width: 220px;
+  /* Expanded state */
 }
 
 .sidebar-header {
@@ -241,7 +248,8 @@ body {
   text-decoration: none;
   transition: var(--transition);
   white-space: nowrap;
-  position: relative; /* Add this for tooltip positioning */
+  position: relative;
+  /* Add this for tooltip positioning */
 }
 
 .sidebar-item:hover {
@@ -317,7 +325,8 @@ body {
 .sidebar:not(.expanded) .sidebar-item:hover::after {
   content: attr(data-tooltip);
   position: absolute;
-  left: 60px; /* Fixed position based on collapsed sidebar width */
+  left: 60px;
+  /* Fixed position based on collapsed sidebar width */
   top: 50%;
   transform: translateY(-50%);
   background-color: var(--dark-color);
@@ -326,10 +335,12 @@ body {
   border-radius: var(--radius-sm);
   font-size: 14px;
   white-space: nowrap;
-  z-index: 1000; /* Higher z-index to ensure visibility */
+  z-index: 1000;
+  /* Higher z-index to ensure visibility */
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
-  pointer-events: none; /* Prevents tooltip from interfering with hover */
+  pointer-events: none;
+  /* Prevents tooltip from interfering with hover */
   opacity: 1;
   visibility: visible;
 }
@@ -352,13 +363,15 @@ body {
 
 /* Main content area */
 .main-content {
-  margin-left: 60px; /* Match collapsed sidebar width */
+  margin-left: 60px;
+  /* Match collapsed sidebar width */
   transition: margin-left 0.3s ease;
   min-height: 100vh;
 }
 
 .main-content.sidebar-expanded {
-  margin-left: 220px; /* Match expanded sidebar width */
+  margin-left: 220px;
+  /* Match expanded sidebar width */
 }
 
 /* Top Bar Styles */
@@ -552,6 +565,7 @@ input[type="number"] {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -563,6 +577,7 @@ input[type="number"] {
     transform: translateX(0);
     opacity: 1;
   }
+
   to {
     transform: translateX(100%);
     opacity: 0;

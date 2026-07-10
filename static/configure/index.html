@@ -1,118 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DRIFT - Configure</title>
-    <link rel="stylesheet" href="/static/common.css" />
-    <link rel="stylesheet" href="/static/configure/configure.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>"
-    />
-  </head>
-  <body class="configure-page">
-    <div class="container">
-      <h1>DRIFT</h1>
-      <form id="port-form" action="/configure" method="POST">
-        <label for="port">Enter Backend Port:</label>
-        <input
-          type="number"
-          id="port"
-          name="port"
-          placeholder="e.g. 3000"
-          required
-        />
 
-        <div class="zrok-options">
-          <h3>Zrok Tunnel Options</h3>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DRIFT - Configure</title>
+  <link rel="stylesheet" href="/static/common.css" />
+  <link rel="stylesheet" href="/static/configure/configure.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🔄</text></svg>" />
+</head>
 
-          <div class="option">
-            <div class="radio-container">
-              <input
-                type="radio"
-                id="zrok-auto"
-                name="zrok_option"
-                value="auto"
-                checked
-              />
-              <label for="zrok-auto"
-                >Automatic (use existing or create new)</label
-              >
-            </div>
-            <span class="help-text"
-              >Uses your existing reserved URL if available, or creates a new
-              one</span
-            >
+<body class="configure-page">
+  <div class="container">
+    <h1>DRIFT</h1>
+    <form id="port-form" action="/configure" method="POST">
+      <label for="port">Enter Backend Port:</label>
+      <input type="number" id="port" name="port" placeholder="e.g. 3000" required />
+
+      <div class="zrok-options">
+        <h3>Zrok Tunnel Options</h3>
+
+        <div class="radio-group-horizontal">
+          <div class="tab-indicator" id="tab-indicator"></div>
+          <div class="radio-tab">
+            <input type="radio" id="zrok-auto" name="zrok_option" value="auto" checked />
+            <label for="zrok-auto">Automatic</label>
           </div>
-
-          <div class="option">
-            <div class="radio-container">
-              <input
-                type="radio"
-                id="zrok-custom"
-                name="zrok_option"
-                value="custom"
-              />
-              <label for="zrok-custom">Use specific reserved token</label>
-            </div>
-            <span class="help-text"
-              >If you have a specific token you want to use, enter it here</span
-            >
-
-            <div class="token-inputs">
-              <input
-                type="text"
-                id="zrok_token"
-                name="zrok_token"
-                placeholder="e.g. w1lowggzejo3"
-                disabled
-              />
-              <input
-                type="number"
-                id="zrok_port"
-                name="zrok_port"
-                placeholder="Interceptor port (e.g. 4040)"
-                disabled
-              />
-              <span class="help-text"
-                >Enter the Interceptor port you used when creating this token
-                (usually 4040)</span
-              >
-            </div>
+          <div class="radio-tab">
+            <input type="radio" id="zrok-reserve" name="zrok_option" value="reserve" />
+            <label for="zrok-reserve">Reserve Name</label>
+          </div>
+          <div class="radio-tab">
+            <input type="radio" id="zrok-custom" name="zrok_option" value="custom" />
+            <label for="zrok-custom">Use Token</label>
           </div>
         </div>
 
-        <button type="submit">Start Drifting</button>
-      </form>
-    </div>
-    <script src="/static/common.js"></script>
-    <script src="/static/configure/configure.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const tokenInput = document.getElementById("zrok_token");
-        const portInput = document.getElementById("zrok_port");
-        const tokenInputs = document.querySelector(".token-inputs");
-        const radioButtons = document.querySelectorAll(
-          'input[name="zrok_option"]'
-        );
+        <div class="option-details">
+          <!-- Automatic option details -->
+          <div class="detail-section" id="detail-auto">
+            <span class="help-text">Uses your existing reserved URL if available, or creates a new random public
+              share</span>
+          </div>
 
-        // Initially hide the token inputs
-        tokenInputs.style.display = "none";
+          <!-- Reserve unique name details -->
+          <div class="detail-section" id="detail-reserve" style="display: none;">
+            <span class="help-text">Creates a persistent reservation with a human-readable name of your choice</span>
+            <div class="token-inputs" id="unique-name-inputs">
+              <input type="text" id="zrok_unique_name" name="zrok_unique_name"
+                placeholder="Unique name (e.g. my-drift-share)" disabled />
+              <span class="help-text">Specify a lowercase alphanumeric name (4-32 characters)</span>
+            </div>
+          </div>
 
-        radioButtons.forEach((radio) => {
-          radio.addEventListener("change", () => {
-            const isExisting = radio.value === "custom";
-            tokenInput.disabled = !isExisting;
-            portInput.disabled = !isExisting;
-            tokenInputs.style.display = isExisting ? "block" : "none";
+          <!-- Use specific reserved token details -->
+          <div class="detail-section" id="detail-custom" style="display: none;">
+            <span class="help-text">Uses a specific token you have already reserved</span>
+            <div class="token-inputs" id="token-inputs">
+              <input type="text" id="zrok_token" name="zrok_token" placeholder="e.g. w1lowggzejo3" disabled />
+              <input type="number" id="zrok_port" name="zrok_port" placeholder="Interceptor port (e.g. 4040)"
+                disabled />
+              <span class="help-text">Enter the Interceptor port you used when creating this token (usually 4040)</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            if (isExisting) {
-              tokenInput.focus();
-            }
-          });
+      <button type="submit">Start Drifting</button>
+    </form>
+  </div>
+  <script src="/static/common.js"></script>
+  <script src="/static/configure/configure.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const tokenInput = document.getElementById("zrok_token");
+      const portInput = document.getElementById("zrok_port");
+      const uniqueNameInput = document.getElementById("zrok_unique_name");
+
+      const detailAuto = document.getElementById("detail-auto");
+      const detailReserve = document.getElementById("detail-reserve");
+      const detailCustom = document.getElementById("detail-custom");
+
+      const optionDetails = document.querySelector(".option-details");
+      const indicator = document.getElementById("tab-indicator");
+      const radioGroup = document.querySelector(".radio-group-horizontal");
+
+      const radioButtons = document.querySelectorAll(
+        'input[name="zrok_option"]'
+      );
+
+      let currentTransitionTimeout = null;
+
+      // Measure and lock the card container height based on the tallest panel layout state
+      if (detailAuto && detailReserve && detailCustom) {
+        const checkedRadio = document.querySelector('input[name="zrok_option"]:checked');
+        const originalDisplayAuto = detailAuto.style.display;
+        const originalDisplayReserve = detailReserve.style.display;
+        const originalDisplayCustom = detailCustom.style.display;
+
+
+        // Measure Auto layout height
+        detailAuto.style.display = "flex";
+        detailReserve.style.display = "none";
+        detailCustom.style.display = "none";
+
+        // Measure Reserve layout height
+        detailAuto.style.display = "none";
+        detailReserve.style.display = "flex";
+        detailCustom.style.display = "none";
+
+        // Measure Custom layout height
+        detailAuto.style.display = "none";
+        detailReserve.style.display = "none";
+        detailCustom.style.display = "flex";
+
+        const activeOption = checkedRadio ? checkedRadio.value : "auto";
+        detailAuto.style.display = activeOption === "auto" ? "flex" : "none";
+        detailReserve.style.display = activeOption === "reserve" ? "flex" : "none";
+        detailCustom.style.display = activeOption === "custom" ? "flex" : "none";
+      }
+
+      // Function to update the tab sliding indicator
+      const updateTabIndicator = (selectedRadio) => {
+        if (!indicator || !radioGroup) return;
+        const label = document.querySelector(`label[for="${selectedRadio.id}"]`);
+        if (!label) return;
+
+        const parentRect = radioGroup.getBoundingClientRect();
+        const labelRect = label.getBoundingClientRect();
+        const left = labelRect.left - parentRect.left;
+        const width = labelRect.width;
+
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (prefersReducedMotion) {
+          indicator.style.transition = "none";
+        } else {
+          indicator.style.transition = "transform 180ms ease, width 180ms ease";
+        }
+
+        indicator.style.transform = `translateX(${left}px)`;
+        indicator.style.width = `${width}px`;
+      };
+
+      // Handle tab switches with FLIP technique
+      const handleTabSwitch = (selectedValue, selectedRadio) => {
+        if (!optionDetails || !detailAuto || !detailReserve || !detailCustom) return;
+
+        const isAuto = selectedValue === "auto";
+        const isReserve = selectedValue === "reserve";
+        const isCustom = selectedValue === "custom";
+
+        // Enable/disable inputs immediately
+        if (tokenInput) tokenInput.disabled = !isCustom;
+        if (portInput) portInput.disabled = !isCustom;
+        if (uniqueNameInput) uniqueNameInput.disabled = !isReserve;
+
+        // Slide indicator immediately
+        if (selectedRadio) {
+          updateTabIndicator(selectedRadio);
+        }
+
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (prefersReducedMotion) {
+          // Apply end state immediately
+          detailAuto.style.display = isAuto ? "flex" : "none";
+          detailReserve.style.display = isReserve ? "flex" : "none";
+          detailCustom.style.display = isCustom ? "flex" : "none";
+          optionDetails.style.height = "auto";
+
+          if (isCustom && tokenInput) tokenInput.focus();
+          else if (isReserve && uniqueNameInput) uniqueNameInput.focus();
+          return;
+        }
+
+        // 1. Measure current height
+        const oldHeight = optionDetails.offsetHeight;
+
+        // Cancel any in-flight transitions
+        if (currentTransitionTimeout) {
+          clearTimeout(currentTransitionTimeout);
+          currentTransitionTimeout = null;
+        }
+        optionDetails.style.transition = "none";
+
+        // 2. Switch active tab / update visible content
+        detailAuto.style.display = isAuto ? "flex" : "none";
+        detailReserve.style.display = isReserve ? "flex" : "none";
+        detailCustom.style.display = isCustom ? "flex" : "none";
+
+        // 3. Measure new natural height
+        const newHeight = optionDetails.scrollHeight;
+
+        // 4. Set height to old value and force reflow
+        optionDetails.style.height = `${oldHeight}px`;
+        optionDetails.offsetHeight; // force reflow
+
+        // 5. Transition to new height
+        optionDetails.style.transition = "height 180ms ease";
+        optionDetails.style.height = `${newHeight}px`;
+
+        // 6. After transition, clear inline height
+        currentTransitionTimeout = setTimeout(() => {
+          optionDetails.style.height = "auto";
+          currentTransitionTimeout = null;
+
+          if (isCustom && tokenInput) {
+            tokenInput.focus();
+          } else if (isReserve && uniqueNameInput) {
+            uniqueNameInput.focus();
+          }
+        }, 180);
+      };
+
+      radioButtons.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          handleTabSwitch(radio.value, radio);
         });
       });
-    </script>
-  </body>
+
+      // Update indicator on window resize
+      window.addEventListener("resize", () => {
+        const checkedRadio = document.querySelector('input[name="zrok_option"]:checked');
+        if (checkedRadio) {
+          indicator.style.transition = "none";
+          updateTabIndicator(checkedRadio);
+        }
+      });
+
+      // Fetch current status to pre-fill inputs
+      fetch("/status")
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.localhostURL) {
+            try {
+              const url = new URL(data.localhostURL);
+              if (url.port) {
+                document.getElementById("port").value = url.port;
+              }
+            } catch (e) {
+              const portMatch = data.localhostURL.match(/:(\d+)/);
+              if (portMatch) {
+                document.getElementById("port").value = portMatch[1];
+              }
+            }
+          }
+          if (data.zrokUniqueName) {
+            uniqueNameInput.value = data.zrokUniqueName;
+          }
+          if (data.zrokOption) {
+            const activeRadio = document.querySelector(
+              `input[name="zrok_option"][value="${data.zrokOption}"]`
+            );
+            if (activeRadio) {
+              activeRadio.checked = true;
+              setTimeout(() => {
+                activeRadio.dispatchEvent(new Event("change"));
+              }, 50);
+            }
+          } else {
+            const defaultRadio = document.querySelector('input[name="zrok_option"]:checked');
+            if (defaultRadio) {
+              setTimeout(() => {
+                updateTabIndicator(defaultRadio);
+              }, 50);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching status:", err);
+          const defaultRadio = document.querySelector('input[name="zrok_option"]:checked');
+          if (defaultRadio) {
+            setTimeout(() => {
+              updateTabIndicator(defaultRadio);
+            }, 50);
+          }
+        });
+    });
+  </script>
+</body>
+
 </html>

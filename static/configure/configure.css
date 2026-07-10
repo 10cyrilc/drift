@@ -85,6 +85,7 @@ button:disabled {
   border-radius: var(--radius-md);
   padding: 10px;
   border: 1px solid var(--border-color);
+  height: 100%;
 }
 
 .zrok-options h3 {
@@ -95,47 +96,97 @@ button:disabled {
   font-weight: 600;
 }
 
-.option {
+.radio-group-horizontal {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  padding: 12px;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 15px 0;
+  background-color: var(--darker-color);
+  padding: 6px;
   border-radius: var(--radius-sm);
-  transition: var(--transition);
+  border: 1px solid var(--border-color);
 }
 
-.radio-container {
+.tab-indicator {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  height: calc(100% - 12px);
+  background-color: var(--primary-color);
+  border-radius: var(--radius-sm);
+  z-index: 1;
+}
+
+.radio-tab {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
-.option:hover {
-  background-color: var(--light-color);
+.radio-tab input[type="radio"] {
+  display: none;
 }
 
-.option input[type="radio"] {
-  margin-top: 3px;
-  margin-right: 12px;
+.radio-tab label {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 10px 5px;
+  text-align: center;
   cursor: pointer;
-}
-
-.option label {
-  flex: 1;
-  cursor: pointer;
+  font-size: 14px;
   font-weight: 500;
-  text-align: left;
+  color: var(--text-light);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  margin: 0;
+}
+
+.radio-tab input[type="radio"]:checked+label {
+  color: white;
+  font-weight: 600;
+}
+
+.radio-tab:hover label {
+  color: var(--text-color);
+}
+
+.radio-tab input[type="radio"]:checked:hover+label {
+  color: white;
+}
+
+.option-details {
+  overflow: hidden;
+  padding: 10px 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .token-inputs {
   margin-top: 12px;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .token-inputs input {
-  width: 90%;
+  width: 100%;
   margin-bottom: 10px;
   background-color: var(--darker-color);
   border: 1px solid var(--border-color);
+  box-sizing: border-box;
 }
 
 .token-inputs input:focus {
@@ -149,39 +200,22 @@ button:disabled {
   color: var(--text-light);
   margin-top: 4px;
   font-style: italic;
+  text-align: left;
 }
 
-/* Custom radio buttons */
-.option input[type="radio"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--border-color);
-  outline: none;
-  margin-right: 12px;
-  position: relative;
-  cursor: pointer;
-  flex-shrink: 0;
+.configure-page .container {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
-.option input[type="radio"]:checked {
-  border-color: var(--primary-color);
+.configure-page form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.option input[type="radio"]:checked::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-}
-
-.option input[type="radio"]:focus {
-  box-shadow: 0 0 0 2px rgba(97, 176, 255, 0.2);
+.configure-page button[type="submit"] {
+  margin-top: auto;
 }
