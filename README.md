@@ -86,24 +86,20 @@ Frontend --> [DRIFT] --> Backend
 
 ---
 
-## 🌐 Tunneling Support (Zrok)
+## 🌐 Tunneling Support (Native Zrok Go SDK)
 
-- Easily expose your local instance to the internet:
-  - Automatically connects using Zrok
-  - Share a live link to your intercepted traffic with collaborators
-  - Two sharing options:
-    - **Auto**: Automatically creates and manages a public URL
-    - **Custom**: Use a specific reserved token for consistent URLs
+DRIFT integrates the **zrok Go SDK** directly into the binary. You **do not need the zrok CLI installed or configured in your system `PATH`** to share your local backend endpoints.
 
-To use a reserved token:
-
-1. Reserve a token first: `zrok reserve public --backend-mode proxy 4040`
-2. Use the token in the configuration page or pass it directly
-3. Tokens are tied to specific ports, so use the same port when sharing
-
-```bash
-# The token will be automatically released when the app is closed
-```
+### Key Capabilities
+- **Programmatic Enablement**: If your environment is not enabled, simply paste your zrok account token directly in the DRIFT configuration UI. DRIFT programmatically registers and configures your environment, writing settings to `~/.zrok2/` in the background.
+- **Dynamic Configuration Cards**: Configure the tunnel using three clean options in the UI:
+  - **Automatic**: Instantly registers a public share on the fly using a dynamically generated identifier.
+  - **Reserve Name**: Lets you enter a custom unique name (e.g. `my-awesome-api`). DRIFT reserves the name and binds the share to it (`https://<custom-name>.shares.zrok.io`).
+  - **Use Token**: Bind to any manually reserved name or existing token.
+- **Interactive Cleanup**: When you terminate DRIFT in your terminal using `Ctrl + C`, the server stops the active listener and prompts:
+  `Do you want to release the zrok token '<token>'? (y/N): `
+  Entering `y`/`yes` releases the name reservation from your account. Otherwise, the name remains reserved for future use.
+- **Zombie Share Pre-Cleanup**: If DRIFT experienced a previous crash or dirty exit, it queries the account overview upon restart and automatically detaches any dead zombie shares bound to your reserved name before starting the new session, avoiding conflict errors.
 
 ---
 
