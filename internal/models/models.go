@@ -80,4 +80,5 @@ type StatusResponse struct {
 	ZrokURL        string `json:"zrokURL"`
 	ZrokUniqueName string `json:"zrokUniqueName"`
 	ZrokOption     string `json:"zrokOption"`
+	ZrokEnabled    bool   `json:"zrokEnabled"`
 }

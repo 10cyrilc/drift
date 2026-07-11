@@ -176,3 +176,30 @@ func HandleHTTPRequest(state *models.AppState, staticFiles embed.FS) http.Handle
 		proxy.ServeHTTP(w, r)
 	}
 }
+
+// EnableZrok handles the programmatic zrok environment enablement request
+func EnableZrok(state *models.AppState) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		token := r.FormValue("token")
+		if token == "" {
+			http.Error(w, "Token is required", http.StatusBadRequest)
+			return
+		}
+
+		fmt.Println("Enabling zrok environment programmatically using SDK...")
+		if err := tunnel.EnableZrokEnvironment(token); err != nil {
+			fmt.Printf("Failed to enable zrok environment: %v\n", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Println("Zrok environment enabled successfully")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Zrok environment enabled successfully"))
+	}
+}

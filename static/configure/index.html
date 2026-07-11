@@ -12,7 +12,23 @@
 </head>
 
 <body class="configure-page">
-  <div class="container">
+  <!-- Zrok Enablement Card -->
+  <div class="container" id="enablement-card" style="display: none;">
+    <h1>DRIFT</h1>
+    <form id="enable-form" action="/enable-zrok" method="POST">
+      <h3 style="margin-top: 0; text-align: center; color: white;">Enable Zrok Environment</h3>
+      <p class="help-text" style="margin-bottom: 20px; text-align: center;">
+        Your zrok environment is not enabled. Please paste your account enable token below to configure it.
+      </p>
+      <label for="enable_token">Enable Token:</label>
+      <input type="text" id="enable_token" name="token" placeholder="Paste your enable token here" required />
+      <span class="help-text">Obtain your token by registering at <a href="https://zrok.io" target="_blank" style="color: var(--primary-color);">zrok.io</a></span>
+      <button type="submit" style="margin-top: auto;">Enable Environment</button>
+    </form>
+  </div>
+
+  <!-- Configure Card -->
+  <div class="container" id="configure-card" style="display: none;">
     <h1>DRIFT</h1>
     <form id="port-form" action="/configure" method="POST">
       <label for="port">Enter Backend Port:</label>
@@ -85,6 +101,9 @@
       const optionDetails = document.querySelector(".option-details");
       const indicator = document.getElementById("tab-indicator");
       const radioGroup = document.querySelector(".radio-group-horizontal");
+      const configureCard = document.getElementById("configure-card");
+      const enablementCard = document.getElementById("enablement-card");
+      const enableForm = document.getElementById("enable-form");
 
       const radioButtons = document.querySelectorAll(
         'input[name="zrok_option"]'
@@ -92,34 +111,45 @@
 
       let currentTransitionTimeout = null;
 
-      // Measure and lock the card container height based on the tallest panel layout state
-      if (detailAuto && detailReserve && detailCustom) {
+      // Function to lock and measure configure card height based on tabs
+      const initializeConfigureCardHeight = () => {
+        if (!configureCard || !detailAuto || !detailReserve || !detailCustom) return;
+
         const checkedRadio = document.querySelector('input[name="zrok_option"]:checked');
         const originalDisplayAuto = detailAuto.style.display;
         const originalDisplayReserve = detailReserve.style.display;
         const originalDisplayCustom = detailCustom.style.display;
 
+        configureCard.style.height = "auto";
+        let maxCardHeight = 0;
 
         // Measure Auto layout height
         detailAuto.style.display = "flex";
         detailReserve.style.display = "none";
         detailCustom.style.display = "none";
+        maxCardHeight = Math.max(maxCardHeight, configureCard.offsetHeight);
 
         // Measure Reserve layout height
         detailAuto.style.display = "none";
         detailReserve.style.display = "flex";
         detailCustom.style.display = "none";
+        maxCardHeight = Math.max(maxCardHeight, configureCard.offsetHeight);
 
         // Measure Custom layout height
         detailAuto.style.display = "none";
         detailReserve.style.display = "none";
         detailCustom.style.display = "flex";
+        maxCardHeight = Math.max(maxCardHeight, configureCard.offsetHeight);
 
+        // Lock configure card height
+        configureCard.style.height = `${maxCardHeight}px`;
+
+        // Restore active displays
         const activeOption = checkedRadio ? checkedRadio.value : "auto";
         detailAuto.style.display = activeOption === "auto" ? "flex" : "none";
         detailReserve.style.display = activeOption === "reserve" ? "flex" : "none";
         detailCustom.style.display = activeOption === "custom" ? "flex" : "none";
-      }
+      };
 
       // Function to update the tab sliding indicator
       const updateTabIndicator = (selectedRadio) => {
@@ -228,10 +258,64 @@
         }
       });
 
-      // Fetch current status to pre-fill inputs
+      // Handle enable-form submission
+      if (enableForm) {
+        enableForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const formData = new FormData(enableForm);
+          const button = enableForm.querySelector("button");
+          const originalText = button.textContent;
+          button.textContent = "Registering...";
+          button.disabled = true;
+
+          fetch(enableForm.action, {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => {
+              if (response.ok) {
+                // Success: hide enablement and show configuration
+                if (enablementCard) enablementCard.style.display = "none";
+                if (configureCard) {
+                  configureCard.style.display = "flex";
+                  initializeConfigureCardHeight();
+                  const defaultRadio = document.querySelector('input[name="zrok_option"]:checked');
+                  if (defaultRadio) {
+                    updateTabIndicator(defaultRadio);
+                  }
+                }
+              } else {
+                return response.text().then((text) => {
+                  throw new Error(text);
+                });
+              }
+            })
+            .catch((error) => {
+              alert("Error enabling environment: " + error.message);
+              button.textContent = originalText;
+              button.disabled = false;
+            });
+        });
+      }
+
+      // Fetch current status to check enablement and pre-fill inputs
       fetch("/status")
         .then((response) => response.json())
         .then((data) => {
+          // Check if Zrok environment is enabled
+          if (data.zrokEnabled) {
+            if (configureCard) configureCard.style.display = "flex";
+            if (enablementCard) enablementCard.style.display = "none";
+          } else {
+            if (configureCard) configureCard.style.display = "none";
+            if (enablementCard) {
+              enablementCard.style.display = "flex";
+              // Lock enablement card height to a simple static value
+              enablementCard.style.height = "380px";
+            }
+            return;
+          }
+
           if (data.localhostURL) {
             try {
               const url = new URL(data.localhostURL);
@@ -248,6 +332,9 @@
           if (data.zrokUniqueName) {
             uniqueNameInput.value = data.zrokUniqueName;
           }
+
+          initializeConfigureCardHeight();
+
           if (data.zrokOption) {
             const activeRadio = document.querySelector(
               `input[name="zrok_option"][value="${data.zrokOption}"]`
@@ -269,11 +356,16 @@
         })
         .catch((err) => {
           console.error("Error fetching status:", err);
-          const defaultRadio = document.querySelector('input[name="zrok_option"]:checked');
-          if (defaultRadio) {
-            setTimeout(() => {
-              updateTabIndicator(defaultRadio);
-            }, 50);
+          // Default fallback
+          if (configureCard) {
+            configureCard.style.display = "flex";
+            initializeConfigureCardHeight();
+            const defaultRadio = document.querySelector('input[name="zrok_option"]:checked');
+            if (defaultRadio) {
+              setTimeout(() => {
+                updateTabIndicator(defaultRadio);
+              }, 50);
+            }
           }
         });
     });

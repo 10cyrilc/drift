@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"drift/internal/models"
+	"drift/internal/tunnel"
 )
 
 // GetStatus handles the status endpoint
@@ -35,6 +36,7 @@ func GetStatus(state *models.AppState) http.HandlerFunc {
 			ZrokURL:        state.ZrokURL,
 			ZrokUniqueName: zrokUniqueName,
 			ZrokOption:     zrokOption,
+			ZrokEnabled:    tunnel.IsZrokEnabled(),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
