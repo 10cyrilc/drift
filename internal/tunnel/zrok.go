@@ -34,13 +34,13 @@ type ZrokSession struct {
 	IsEphemeral bool
 }
 
-// Close closes the zrok tunnel listener and deletes ephemeral shares
+// Close closes the zrok tunnel listener and deletes active shares
 func (s *ZrokSession) Close() error {
 	var err error
 	if s.Listener != nil {
 		err = s.Listener.Close()
 	}
-	if s.IsEphemeral && s.ShareToken != "" {
+	if s.ShareToken != "" {
 		if root, rootErr := environment.LoadRoot(); rootErr == nil {
 			_ = sdk.DeleteShare(root, &sdk.Share{Token: s.ShareToken})
 		}
@@ -133,6 +133,26 @@ func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
 	return uniqueName, url, nil
 }
 
+// getActiveShareTokenForName queries the zrok overview to find any active share token bound to a name
+func getActiveShareTokenForName(root env_core.Root, name string) (string, error) {
+	overviewStr, err := sdk.Overview(root)
+	if err != nil {
+		return "", err
+	}
+
+	var overview rest_model_zrok.Overview
+	if err := json.Unmarshal([]byte(overviewStr), &overview); err != nil {
+		return "", err
+	}
+
+	for _, nameItem := range overview.Names {
+		if nameItem != nil && nameItem.Name == name {
+			return nameItem.ShareToken, nil
+		}
+	}
+	return "", nil
+}
+
 // ReleaseZrokToken releases/deletes a reserved zrok name and any active share associated with it
 func ReleaseZrokToken(token string) error {
 	root, err := environment.LoadRoot()
@@ -146,8 +166,11 @@ func ReleaseZrokToken(token string) error {
 	}
 	auth := httptransport.APIKeyAuth("X-TOKEN", "header", root.Environment().AccountToken)
 
-	// Clean up any active share first
-	_ = sdk.DeleteShare(root, &sdk.Share{Token: token})
+	// Clean up any active share attached to this name first
+	if shareToken, err := getActiveShareTokenForName(root, token); err == nil && shareToken != "" {
+		fmt.Printf("Cleaning up active share %s before releasing name %s\n", shareToken, token)
+		_ = sdk.DeleteShare(root, &sdk.Share{Token: shareToken})
+	}
 
 	// Delete the reserved name
 	params := share.NewDeleteShareNameParams()
@@ -225,6 +248,12 @@ func StartZrok(state *models.AppState, port string) {
 			return
 		}
 		reservedToken = token
+	} else {
+		// Clean up any active zombie share attached to this name first to prevent conflicts
+		if shareToken, err := getActiveShareTokenForName(root, reservedToken); err == nil && shareToken != "" {
+			fmt.Printf("Cleaning up active zombie share %s attached to name %s\n", shareToken, reservedToken)
+			_ = sdk.DeleteShare(root, &sdk.Share{Token: shareToken})
+		}
 	}
 
 	if tokenPort != "" && tokenPort != port {
