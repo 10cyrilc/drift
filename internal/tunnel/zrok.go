@@ -5,346 +5,350 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
-	"regexp"
 	"strings"
 	"syscall"
-	"time"
 
 	"drift/internal/models"
 
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/google/uuid"
+	"github.com/openziti/sdk-golang/ziti/edge"
+	"github.com/openziti/zrok/v2/environment"
+	"github.com/openziti/zrok/v2/environment/env_core"
+	restEnvironment "github.com/openziti/zrok/v2/rest_client_zrok/environment"
+	"github.com/openziti/zrok/v2/rest_client_zrok/share"
+	"github.com/openziti/zrok/v2/rest_model_zrok"
+	"github.com/openziti/zrok/v2/sdk/golang/sdk"
+	zrokUtil "github.com/openziti/zrok/v2/util"
 )
 
-// getZrokPath searches for zrok2 or zrok in the PATH and returns the path.
-func getZrokPath() (string, error) {
-	if path, err := exec.LookPath("zrok2"); err == nil {
-		return path, nil
-	}
-	if path, err := exec.LookPath("zrok"); err == nil {
-		return path, nil
-	}
-	return "", fmt.Errorf("neither zrok2 nor zrok found in PATH")
+// ZrokSession represents an active zrok sharing tunnel session
+type ZrokSession struct {
+	Listener    edge.Listener
+	ShareToken  string
+	IsEphemeral bool
 }
 
-// isZrokV2 checks if the zrok binary at the given path is version 2.
-func isZrokV2(zrokPath string) bool {
-	cmd := exec.Command(zrokPath, "version")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return strings.Contains(strings.ToLower(zrokPath), "zrok2")
+// Close closes the zrok tunnel listener and deletes active shares
+func (s *ZrokSession) Close() error {
+	var err error
+	if s.Listener != nil {
+		err = s.Listener.Close()
 	}
-	return strings.Contains(string(output), "v2.")
-}
-
-// ReserveZrokToken reserves a new zrok share token for a specific port
-func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
-	zrokPath, err := getZrokPath()
-	if err != nil {
-		return "", "", fmt.Errorf("zrok not found: %v", err)
-	}
-
-	isV2 := isZrokV2(zrokPath)
-
-	if isV2 {
-		if uniqueName == "" {
-			u := uuid.New().String()
-			uniqueName = "drift-" + strings.ReplaceAll(u, "-", "")[:8]
+	if s.ShareToken != "" {
+		if root, rootErr := environment.LoadRoot(); rootErr == nil {
+			_ = sdk.DeleteShare(root, &sdk.Share{Token: s.ShareToken})
 		}
-
-		cmd := exec.Command(zrokPath, "create", "name", uniqueName)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return "", "", fmt.Errorf("failed to reserve zrok name: %v, output: %s", err, output)
-		}
-
-		url := fmt.Sprintf("https://%s.shares.zrok.io", uniqueName)
-		return uniqueName, url, nil
 	}
-
-	args := []string{"reserve", "public", "--backend-mode", "proxy"}
-	if uniqueName != "" {
-		args = append(args, "--unique-name", uniqueName)
-	}
-	args = append(args, port)
-
-	cmd := exec.Command(zrokPath, args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to reserve zrok token: %v, output: %s", err, output)
-	}
-
-	// Parse the output to extract the token and URL
-	outputStr := string(output)
-	tokenRegex := regexp.MustCompile(`your reserved share token is '([^']+)'`)
-	urlRegex := regexp.MustCompile(`reserved frontend endpoint: (https://[^\s]+)`)
-
-	tokenMatch := tokenRegex.FindStringSubmatch(outputStr)
-	urlMatch := urlRegex.FindStringSubmatch(outputStr)
-
-	if len(tokenMatch) < 2 || len(urlMatch) < 2 {
-		return "", "", fmt.Errorf("failed to parse zrok reserve output")
-	}
-
-	return tokenMatch[1], urlMatch[1], nil
+	return err
 }
 
-// ReleaseZrokToken releases a reserved zrok token.
-func ReleaseZrokToken(token string) error {
-	zrokPath, err := getZrokPath()
+// IsZrokEnabled returns true if the local zrok environment is enabled
+func IsZrokEnabled() bool {
+	root, err := environment.LoadRoot()
 	if err != nil {
-		return fmt.Errorf("zrok not found: %v", err)
+		return false
 	}
+	return root.IsEnabled()
+}
 
-	isV2 := isZrokV2(zrokPath)
-	var cmd *exec.Cmd
-	if isV2 {
-		// First delete the share associated with the name (ignoring error in case it doesn't exist or is already deleted)
-		delShareCmd := exec.Command(zrokPath, "delete", "share", token)
-		_ = delShareCmd.Run()
-
-		cmd = exec.Command(zrokPath, "delete", "name", token)
-	} else {
-		cmd = exec.Command(zrokPath, "release", token)
-	}
-
-	output, err := cmd.CombinedOutput()
+// EnableZrokEnvironment registers and enables a local zrok environment using an account token
+func EnableZrokEnvironment(token string) error {
+	root, err := environment.LoadRoot()
 	if err != nil {
-		return fmt.Errorf("failed to unreserve token %s: %v, output: %s", token, err, output)
+		return fmt.Errorf("failed to load zrok root: %v", err)
 	}
+
+	if root.IsEnabled() {
+		return fmt.Errorf("zrok environment is already enabled")
+	}
+
+	hostName, hostDetail, username, err := zrokUtil.GetHostDetails()
+	if err != nil {
+		hostName = "drift-host"
+		hostDetail = "drift-service"
+		username = "drift"
+	}
+	hostDetail, description := zrokUtil.FormatHostDetailsWithUser(username, hostName, hostDetail, "drift-proxy")
+
+	zrok, err := root.Client()
+	if err != nil {
+		return fmt.Errorf("error creating service client: %v", err)
+	}
+	auth := httptransport.APIKeyAuth("X-TOKEN", "header", token)
+	req := restEnvironment.NewEnableParams()
+	req.Body.Description = description
+	req.Body.Host = hostDetail
+
+	resp, err := zrok.Environment.Enable(req, auth)
+	if err != nil {
+		return fmt.Errorf("the zrok service returned an error: %v", err)
+	}
+
+	apiEndpoint, _ := root.ApiEndpoint()
+	if err := root.SetEnvironment(&env_core.Environment{AccountToken: token, ZitiIdentity: resp.Payload.Identity, ApiEndpoint: apiEndpoint}); err != nil {
+		return fmt.Errorf("error saving environment: %v", err)
+	}
+
+	if err := root.SaveZitiIdentityNamed(root.EnvironmentIdentityName(), resp.Payload.Cfg); err != nil {
+		return fmt.Errorf("error writing environment identity: %v", err)
+	}
+
 	return nil
 }
 
-// GetAllReservedZrokTokens retrieves all reserved zrok share tokens
-func GetAllReservedZrokTokens() ([]string, error) {
-	zrokPath, err := getZrokPath()
+// ReserveZrokToken reserves a new zrok name within the public namespace
+func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
+	root, err := environment.LoadRoot()
 	if err != nil {
-		return nil, fmt.Errorf("zrok not found: %v", err)
+		return "", "", fmt.Errorf("zrok environment not enabled: %v", err)
 	}
 
-	isV2 := isZrokV2(zrokPath)
-
-	if isV2 {
-		cmd := exec.Command(zrokPath, "list", "names", "--json")
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("failed to list zrok names: %v, output: %s", err, output)
-		}
-
-		var jsonData2 []struct {
-			Name string `json:"name"`
-		}
-
-		if err := json.Unmarshal(output, &jsonData2); err == nil {
-			var tokens []string
-			for _, item := range jsonData2 {
-				tokens = append(tokens, item.Name)
-			}
-			return tokens, nil
-		}
-
-		// Fallback: regex parse the table
-		outputStr := string(output)
-		tokenRegex := regexp.MustCompile(`│\s*([a-zA-Z0-9\-]+)\s*│\s*[a-zA-Z0-9\-]+\s*│`)
-		matches := tokenRegex.FindAllStringSubmatch(outputStr, -1)
-		var tokens []string
-		for _, match := range matches {
-			if len(match) > 1 {
-				tokens = append(tokens, strings.TrimSpace(match[1]))
-			}
-		}
-		return tokens, nil
+	if uniqueName == "" {
+		u := uuid.New().String()
+		uniqueName = "drift-" + strings.ReplaceAll(u, "-", "")[:8]
 	}
 
-	// Prefer JSON output if available
-	cmd := exec.Command(zrokPath, "overview", "--json")
-	output, err := cmd.CombinedOutput()
+	zrok, err := root.Client()
 	if err != nil {
-		// Retry without --json in case version doesn't support it
-		cmd = exec.Command(zrokPath, "overview")
-		output, err = cmd.CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get zrok overview: %v, output: %s", err, output)
-		}
+		return "", "", fmt.Errorf("error getting zrok client: %v", err)
 	}
+	auth := httptransport.APIKeyAuth("X-TOKEN", "header", root.Environment().AccountToken)
 
-	outputStr := strings.TrimSpace(string(output))
+	params := share.NewCreateShareNameParams()
+	params.Body.Name = uniqueName
+	params.Body.NamespaceToken = "public"
 
-	// Try JSON parse first
-	var jsonData struct {
-		Environments []struct {
-			Shares []struct {
-				Reserved   bool   `json:"reserved"`
-				ShareToken string `json:"shareToken"`
-			} `json:"shares"`
-		} `json:"environments"`
-	}
-
-	if json.Unmarshal([]byte(outputStr), &jsonData) == nil {
-		var tokens []string
-		for _, env := range jsonData.Environments {
-			for _, share := range env.Shares {
-				if share.Reserved {
-					tokens = append(tokens, share.ShareToken)
+	_, err = zrok.Share.CreateShareName(params, auth)
+	if err != nil {
+		// If creation failed, check if the name is already reserved by our account so we can reuse it
+		if names, errOverview := GetAllReservedZrokTokens(); errOverview == nil {
+			for _, n := range names {
+				if n == uniqueName {
+					fmt.Printf("Name %s is already reserved by this account, reusing it\n", uniqueName)
+					url := fmt.Sprintf("https://%s.shares.zrok.io", uniqueName)
+					return uniqueName, url, nil
 				}
 			}
 		}
-		if len(tokens) > 0 {
-			return tokens, nil
-		}
+		return "", "", fmt.Errorf("failed to create reserved name %s: %v", uniqueName, err)
 	}
 
-	// Fallback: regex parse if JSON failed
-	tokenRegex := regexp.MustCompile(`reserved share token:\s*([a-zA-Z0-9\-]+)`)
-	matches := tokenRegex.FindAllStringSubmatch(outputStr, -1)
+	url := fmt.Sprintf("https://%s.shares.zrok.io", uniqueName)
+	return uniqueName, url, nil
+}
+
+// getActiveShareTokenForName queries the zrok overview to find any active share token bound to a name
+func getActiveShareTokenForName(root env_core.Root, name string) (string, error) {
+	overviewStr, err := sdk.Overview(root)
+	if err != nil {
+		return "", err
+	}
+
+	var overview rest_model_zrok.Overview
+	if err := json.Unmarshal([]byte(overviewStr), &overview); err != nil {
+		return "", err
+	}
+
+	for _, nameItem := range overview.Names {
+		if nameItem != nil && nameItem.Name == name {
+			return nameItem.ShareToken, nil
+		}
+	}
+	return "", nil
+}
+
+// ReleaseZrokToken releases/deletes a reserved zrok name and any active share associated with it
+func ReleaseZrokToken(token string) error {
+	root, err := environment.LoadRoot()
+	if err != nil {
+		return fmt.Errorf("zrok environment not enabled: %v", err)
+	}
+
+	zrok, err := root.Client()
+	if err != nil {
+		return fmt.Errorf("error getting zrok client: %v", err)
+	}
+	auth := httptransport.APIKeyAuth("X-TOKEN", "header", root.Environment().AccountToken)
+
+	// Clean up any active share attached to this name first
+	if shareToken, err := getActiveShareTokenForName(root, token); err == nil && shareToken != "" {
+		fmt.Printf("Cleaning up active share %s before releasing name %s\n", shareToken, token)
+		_ = sdk.DeleteShare(root, &sdk.Share{Token: shareToken})
+	}
+
+	// Delete the reserved name
+	params := share.NewDeleteShareNameParams()
+	params.Body.Name = token
+	params.Body.NamespaceToken = "public"
+
+	_, err = zrok.Share.DeleteShareName(params, auth)
+	if err != nil {
+		return fmt.Errorf("failed to delete reserved name %s: %v", token, err)
+	}
+
+	return nil
+}
+
+// GetAllReservedZrokTokens retrieves all reserved name tokens for the account
+func GetAllReservedZrokTokens() ([]string, error) {
+	root, err := environment.LoadRoot()
+	if err != nil {
+		return nil, fmt.Errorf("zrok environment not enabled: %v", err)
+	}
+
+	overviewStr, err := sdk.Overview(root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get zrok overview: %v", err)
+	}
+
+	var overview rest_model_zrok.Overview
+	if err := json.Unmarshal([]byte(overviewStr), &overview); err != nil {
+		return nil, fmt.Errorf("failed to parse zrok overview: %v", err)
+	}
 
 	var tokens []string
-	for _, match := range matches {
-		if len(match) > 1 {
-			tokens = append(tokens, match[1])
+	for _, nameItem := range overview.Names {
+		if nameItem != nil && nameItem.Name != "" {
+			tokens = append(tokens, nameItem.Name)
 		}
 	}
-
 	return tokens, nil
 }
 
-// StartZrok starts a zrok tunnel for public access
+// StartZrok starts hosting a native zrok public share reverse proxy to localhost in the background
 func StartZrok(state *models.AppState, port string) {
-	// Set initial zrokURL to indicate initialization
 	state.ZrokMu.Lock()
 	state.ZrokURL = "Initializing Zrok tunnel..."
 	state.ZrokMu.Unlock()
 
-	// Check if zrok is installed
-	zrokPath, err := getZrokPath()
+	root, err := environment.LoadRoot()
 	if err != nil {
-		fmt.Println("Zrok not found. Public URL will not be available.")
+		fmt.Printf("Zrok environment error: %v\n", err)
 		state.ZrokMu.Lock()
-		state.ZrokURL = "Zrok not installed"
+		state.ZrokURL = "Zrok environment not enabled"
 		state.ZrokMu.Unlock()
 		return
 	}
 
-	// Kill any existing zrok process
-	state.ZrokCmd.Lock()
-	if state.ZrokProcess != nil {
-		if process, ok := state.ZrokProcess.(*exec.Cmd); ok && process.Process != nil {
-			fmt.Println("Killing existing zrok process...")
-			process.Process.Kill()
-			process.Wait()
-		}
-	}
-	state.ZrokCmd.Unlock()
-
-	// Get the reserved token
 	state.ConfigMu.Lock()
 	reservedToken := state.Config.ZrokToken
 	tokenPort := state.Config.ZrokPort
 	state.ConfigMu.Unlock()
 
-	isV2 := isZrokV2(zrokPath)
-
-	// Check if we have a valid token
+	isEphemeral := false
 	if reservedToken == "" {
-		fmt.Println("No reserved token available, using random public share")
-		var cmd *exec.Cmd
-		if isV2 {
-			cmd = exec.Command(zrokPath, "share", "public", port, "--headless")
-		} else {
-			cmd = exec.Command(zrokPath, "share", "public", "--backend-mode", "proxy", port)
-		}
-		startZrokProcess(cmd, state, port)
-		return
+		isEphemeral = true
 	}
 
-	// Check if the token is for the current port
-	if tokenPort != port {
+	// If it is ephemeral, we first reserve a temporary random name so we have a persistent identifier
+	if isEphemeral {
+		fmt.Println("No reserved token available, creating a temporary random reservation")
+		token, _, err := ReserveZrokToken(port, "")
+		if err != nil {
+			fmt.Printf("Failed to create random reservation: %v\n", err)
+			state.ZrokMu.Lock()
+			state.ZrokURL = fmt.Sprintf("Failed to initialize: %v", err)
+			state.ZrokMu.Unlock()
+			return
+		}
+		reservedToken = token
+	} else {
+		// Clean up any active zombie share attached to this name first to prevent conflicts
+		if shareToken, err := getActiveShareTokenForName(root, reservedToken); err == nil && shareToken != "" {
+			fmt.Printf("Cleaning up active zombie share %s attached to name %s\n", shareToken, reservedToken)
+			_ = sdk.DeleteShare(root, &sdk.Share{Token: shareToken})
+		}
+	}
+
+	if tokenPort != "" && tokenPort != port {
 		fmt.Printf("Warning: Token %s was created for port %s but current port is %s\n",
 			reservedToken, tokenPort, port)
 	}
 
-	// Create the command for reserved token
-	var cmd *exec.Cmd
-	if isV2 {
-		cmd = exec.Command(zrokPath, "share", "public", port, "-n", "public:"+reservedToken, "--headless")
-	} else {
-		cmd = exec.Command(zrokPath, "share", "reserved", reservedToken)
-	}
-	fmt.Println("Using reserved zrok token:", reservedToken)
-	startZrokProcess(cmd, state, port)
-}
-
-func startZrokProcess(cmd *exec.Cmd, state *models.AppState, port string) {
-	// Set up output capture
-	stdout, _ := cmd.StdoutPipe()
-	stderr, _ := cmd.StderrPipe()
-
-	// Start the command
-	fmt.Println("Starting zrok process...")
-	if err := cmd.Start(); err != nil {
-		fmt.Printf("Failed to start zrok: %v\n", err)
+	// Create zrok public proxy share
+	fmt.Println("Creating zrok share for token:", reservedToken)
+	shr, err := sdk.CreateShare(root, &sdk.ShareRequest{
+		BackendMode: sdk.ProxyBackendMode,
+		ShareMode:   sdk.PublicShareMode,
+		Target:      "http://localhost:" + port,
+		NameSelections: []sdk.NameSelection{
+			{
+				NamespaceToken: "public",
+				Name:           reservedToken,
+			},
+		},
+	})
+	if err != nil {
+		fmt.Printf("Failed to create zrok share: %v\n", err)
 		state.ZrokMu.Lock()
-		state.ZrokURL = fmt.Sprintf("Failed to start zrok: %v", err)
+		state.ZrokURL = fmt.Sprintf("Failed to create share: %v", err)
+		state.ZrokMu.Unlock()
+
+		// If we created a temporary reservation, clean it up
+		if isEphemeral {
+			_ = ReleaseZrokToken(reservedToken)
+		}
+		return
+	}
+
+	urlStr := shr.FrontendEndpoints[0]
+	if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
+		urlStr = "https://" + urlStr
+	}
+
+	// Start zrok native listener
+	listener, err := sdk.NewListener(shr.Token, root)
+	if err != nil {
+		fmt.Printf("Failed to create zrok listener: %v\n", err)
+		state.ZrokMu.Lock()
+		state.ZrokURL = fmt.Sprintf("Failed to listen: %v", err)
 		state.ZrokMu.Unlock()
 		return
 	}
 
-	// Store the command
+	// Setup local reverse proxy
+	targetURL, _ := url.Parse("http://localhost:" + port)
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+	session := &ZrokSession{
+		Listener:    listener,
+		ShareToken:  shr.Token,
+		IsEphemeral: isEphemeral,
+	}
+
 	state.ZrokCmd.Lock()
-	state.ZrokProcess = cmd
+	// Kill any existing tunnel session if active
+	if state.ZrokProcess != nil {
+		if prevSession, ok := state.ZrokProcess.(io.Closer); ok {
+			fmt.Println("Stopping previous zrok session...")
+			prevSession.Close()
+		}
+	}
+	state.ZrokProcess = session
 	state.ZrokCmd.Unlock()
 
-	// Process output
+	state.ZrokMu.Lock()
+	state.ZrokURL = urlStr
+	state.ZrokMu.Unlock()
+
+	fmt.Println("=================================================")
+	fmt.Println("Access DRIFT at:")
+	fmt.Printf("Local URL: http://localhost:%s/inspector/dashboard\n", port)
+	fmt.Println("Public URL:", urlStr)
+	fmt.Println("=================================================")
+
+	// Serve the reverse proxy traffic in the background
 	go func() {
-		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
-		timeout := time.After(30 * time.Second)
-		for scanner.Scan() {
-			select {
-			case <-timeout:
-				state.ZrokMu.Lock()
-				if state.ZrokURL == "Initializing Zrok tunnel..." {
-					state.ZrokURL = "Zrok URL not found (timeout)"
-				}
-				state.ZrokMu.Unlock()
-				return
-			default:
-				line := scanner.Text()
-				if strings.Contains(line, "zrok.io") {
-
-					re := regexp.MustCompile(`(?:https://)?([a-zA-Z0-9\-]+\.(?:share|shares)\.zrok\.io)`)
-					match := re.FindStringSubmatch(line)
-					if len(match) > 1 {
-						url := "https://" + match[1]
-
-						state.ZrokMu.Lock()
-						state.ZrokURL = url
-						state.ZrokMu.Unlock()
-						fmt.Println("=================================================")
-						fmt.Println("Access DRIFT at:")
-						fmt.Printf("Local URL: http://localhost:%s/inspector/dashboard\n", port)
-						fmt.Println("Public URL:", url)
-						fmt.Println("=================================================")
-						return
-					}
-				}
-			}
-		}
-		state.ZrokMu.Lock()
-		if state.ZrokURL == "Initializing Zrok tunnel..." {
-			state.ZrokURL = "No zrok URL found in output"
-		}
-		state.ZrokMu.Unlock()
-	}()
-
-	// Wait for the process in a separate goroutine
-	go func() {
-		err := cmd.Wait()
-		if err != nil {
-			fmt.Printf("Zrok process exited with error: %v\n", err)
+		if err := http.Serve(listener, proxy); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
+			fmt.Printf("Zrok server exited with error: %v\n", err)
 		} else {
-			fmt.Println("Zrok process exited normally")
+			fmt.Println("Zrok server tunnel stopped cleanly")
 		}
 	}()
 }
@@ -355,32 +359,44 @@ func SetupCleanupHandler(state *models.AppState) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Println("Shutting down, cleaning up resources...")
+		fmt.Println("\nShutting down, cleaning up resources...")
 
-		// Kill zrok process only if it exists
 		state.ZrokCmd.Lock()
-		zrokProcessExists := false
+		var activeSession io.Closer
 		if state.ZrokProcess != nil {
-			if process, ok := state.ZrokProcess.(*exec.Cmd); ok && process.Process != nil {
-				zrokProcessExists = true
-				fmt.Println("Stopping zrok process...")
-				process.Process.Kill()
+			if session, ok := state.ZrokProcess.(io.Closer); ok {
+				activeSession = session
 			}
 		}
 		state.ZrokCmd.Unlock()
 
-		// Release the reserved token only if we had a zrok process
-		if zrokProcessExists {
-			state.ConfigMu.Lock()
-			token := state.Config.ZrokToken
-			state.ConfigMu.Unlock()
+		if activeSession != nil {
+			fmt.Println("Closing active zrok tunnel listener...")
+			activeSession.Close()
+		}
 
-			if token != "" {
-				fmt.Println("Releasing zrok token:", token)
-				if err := ReleaseZrokToken(token); err != nil {
-					fmt.Printf("Failed to release zrok token: %v\n", err)
+		state.ConfigMu.Lock()
+		token := ""
+		if state.Config != nil {
+			token = state.Config.ZrokToken
+		}
+		state.ConfigMu.Unlock()
+
+		if token != "" {
+			fmt.Printf("Do you want to release the zrok token '%s'? (y/N): ", token)
+			reader := bufio.NewReader(os.Stdin)
+			input, err := reader.ReadString('\n')
+			if err == nil {
+				input = strings.TrimSpace(strings.ToLower(input))
+				if input == "y" || input == "yes" {
+					fmt.Println("Releasing zrok token:", token)
+					if err := ReleaseZrokToken(token); err != nil {
+						fmt.Printf("Failed to release zrok token: %v\n", err)
+					} else {
+						fmt.Println("Successfully released zrok token")
+					}
 				} else {
-					fmt.Println("Successfully released zrok token")
+					fmt.Println("Keeping zrok token reserved")
 				}
 			}
 		}

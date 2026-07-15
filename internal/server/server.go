@@ -20,6 +20,7 @@ func Start(state *models.AppState, staticFiles embed.FS, port string) error {
 	http.HandleFunc("/configure", handlers.ConfigureProxy(state, port))
 	http.HandleFunc("/ws", handlers.HandleWebSocket(state))
 	http.HandleFunc("/status", handlers.GetStatus(state))
+	http.HandleFunc("/enable-zrok", handlers.EnableZrok(state))
 
 	// Start broadcasting logs
 	handlers.BroadcastLogs(state)

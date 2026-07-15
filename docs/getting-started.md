@@ -74,11 +74,12 @@ http://localhost:4040/inspector/configure
 
 You'll see the configuration page where you need to:
 
-1. **Enter your backend port** - The port where your actual backend server is running (e.g., 3000, 8000, 8080)
-2. **Choose tunneling option** (optional):
-   - **Auto**: Automatically creates a public URL using Zrok
-   - **Custom**: Use a reserved Zrok token for a consistent public URL
-   - **None**: Skip public URL creation
+1. **Enable Zrok Environment** (first-time setup only) - If your local zrok environment is not enabled, paste your account enable token into the enablement card. DRIFT will enable it programmatically.
+2. **Enter your backend port** - The port where your actual backend server is running (e.g., 3000, 8080)
+3. **Choose tunneling option**:
+   - **Automatic**: Automatically generates a dynamic, random public URL.
+   - **Reserve Name**: Expose under a persistent human-readable name of your choice (e.g., `https://my-drift.shares.zrok.io`).
+   - **Use Token**: Bind to a specific manually reserved token or name.
 
 3. Click **"Start Intercepting"**
 
@@ -135,33 +136,26 @@ Features:
 
 ## Public URL Tunneling (Optional)
 
-DRIFT integrates with [Zrok](https://zrok.io/) to create public URLs for your local server. This is useful for:
+DRIFT integrates a native Go implementation of the [zrok Go SDK](https://zrok.io/) directly into the binary to generate public URLs. **No external CLI binary installation or PATH configuration is required.**
 
-- Testing webhooks from external services
-- Sharing your local API with remote team members
-- Demonstrating features to clients
+### Programmatic Enablement
+If you have not set up zrok, you can paste your enable token in the DRIFT dashboard configuration card. DRIFT automatically contacts the zrok controller and enables the environment.
 
-### Auto Mode
+### Automatic Mode
+Generates a new random URL on the fly. 
 
-Simply select "Auto" in the configuration page, and DRIFT will automatically create a public URL for you.
+### Reserve Name Mode
+Exposes your API under a custom human-readable name (e.g., `my-drift-share` -> `https://my-drift-share.shares.zrok.io`). The name remains persistent in your account.
 
-### Custom Token Mode
+### Use Token Mode
+Lets you bind to any existing reserved name or token.
 
-For consistent URLs across sessions:
-
-1. **Reserve a Zrok token** (requires Zrok CLI):
-   ```bash
-   zrok reserve public --backend-mode proxy 4040
-   ```
-
-2. **Copy the token** from the output
-
-3. **Enter the token** in DRIFT's configuration page
-
-4. The same public URL will be used every time you use this token
-
-!!! tip "Token Management"
-    DRIFT automatically releases Zrok tokens when you stop the server. You can also manually release tokens using the `drift release` command.
+!!! tip "Interactive Clean Cleanup"
+    When you stop the server using `Ctrl + C` in your terminal, DRIFT asks if you would like to release the reserved name:
+    ```
+    Do you want to release the zrok token 'my-drift-share'? (y/N): 
+    ```
+    Pressing `y`/`yes` deletes the name reservation, while pressing Enter or `n` keeps the name reserved on your zrok account.
 
 ## Workflow Example
 
@@ -215,9 +209,9 @@ Here's a complete workflow for using DRIFT:
 
 ### Public URL not working
 
-- **Install Zrok**: Make sure Zrok CLI is installed and configured
-- **Check Zrok status**: Run `zrok status` to verify Zrok is working
-- **Verify token**: If using custom token, ensure it's valid and not expired
+- **Check Enablement status**: Verify you have pasted your zrok account token to enable the environment.
+- **Controller Connectivity**: Ensure your local machine has internet access and can connect to `api.zrok.io` (or your custom controller API endpoint).
+- **Name Collisions**: If you are using "Reserve Name" and the name is already taken by another account, the creation will fail. Try another name.
 
 ## Next Steps
 

@@ -92,6 +92,7 @@ func StartServer(portFlag string, staticFiles embed.FS) {
 
 	// Create application state
 	state := models.NewAppState()
+	state.DriftPort = cfg.Port
 
 	// Start the server
 	fmt.Println("Starting DRIFT...")
