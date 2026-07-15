@@ -126,6 +126,16 @@ func ReserveZrokToken(port string, uniqueName string) (string, string, error) {
 
 	_, err = zrok.Share.CreateShareName(params, auth)
 	if err != nil {
+		// If creation failed, check if the name is already reserved by our account so we can reuse it
+		if names, errOverview := GetAllReservedZrokTokens(); errOverview == nil {
+			for _, n := range names {
+				if n == uniqueName {
+					fmt.Printf("Name %s is already reserved by this account, reusing it\n", uniqueName)
+					url := fmt.Sprintf("https://%s.shares.zrok.io", uniqueName)
+					return uniqueName, url, nil
+				}
+			}
+		}
 		return "", "", fmt.Errorf("failed to create reserved name %s: %v", uniqueName, err)
 	}
 

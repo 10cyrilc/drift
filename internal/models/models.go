@@ -60,6 +60,7 @@ type AppState struct {
 	StatusMu     sync.Mutex
 	ZrokCmd      *sync.Mutex
 	ZrokProcess  interface{}
+	DriftPort    string
 }
 
 // NewAppState creates a new application state
@@ -81,4 +82,6 @@ type StatusResponse struct {
 	ZrokUniqueName string `json:"zrokUniqueName"`
 	ZrokOption     string `json:"zrokOption"`
 	ZrokEnabled    bool   `json:"zrokEnabled"`
+	DriftURL       string `json:"driftURL"`
+	BackendPort    string `json:"backendPort"`
 }

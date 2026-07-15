@@ -258,17 +258,26 @@ function updateStatus() {
   fetch("/status")
     .then((response) => response.json())
     .then((data) => {
-      const localhostEl = document.getElementById("localhost-url");
-      if (localhostEl && data.localhostURL) {
-        const currentURL = localhostEl.textContent
-          ?.replace("Localhost URL: ", "")
+      const driftEl = document.getElementById("drift-url");
+      if (driftEl && data.driftURL) {
+        const currentURL = driftEl.textContent
+          ?.replace("DRIFT Proxy: ", "")
           .trim();
 
-        if (currentURL !== data.localhostURL) {
-          localhostEl.textContent = `Localhost URL: ${data.localhostURL}`;
+        if (currentURL !== data.driftURL) {
+          driftEl.innerHTML = `DRIFT Proxy: <a href="${data.driftURL}" target="_blank">${data.driftURL}</a>`;
         }
+        hideLoading("drift-url");
+      }
 
-        hideLoading("localhost-url");
+      const proxiedPortEl = document.getElementById("proxied-port");
+      if (proxiedPortEl) {
+        const displayPort = data.backendPort ? `:${data.backendPort}` : "Not configured";
+        const displayText = `Forwarding: ${displayPort}`;
+        if (proxiedPortEl.textContent !== displayText) {
+          proxiedPortEl.textContent = displayText;
+        }
+        hideLoading("proxied-port");
       }
 
       const serverStatus = data.serverStatus;
@@ -325,7 +334,8 @@ function updateStatus() {
       showError("Error fetching status:", error);
       showError("Failed to fetch server status: " + error.message);
       hideLoading("server-status");
-      hideLoading("localhost-url");
+      hideLoading("drift-url");
+      hideLoading("proxied-port");
       hideLoading("zrok-url");
     });
 }
@@ -419,7 +429,8 @@ function setupSidebar() {
 // Initialize top bar elements
 function initializeTopBar() {
   const serverStatusEl = document.getElementById("server-status");
-  const localhostUrlEl = document.getElementById("localhost-url");
+  const driftUrlEl = document.getElementById("drift-url");
+  const proxiedPortEl = document.getElementById("proxied-port");
   const zrokUrlEl = document.getElementById("zrok-url");
 
   // Set initial values
@@ -428,8 +439,12 @@ function initializeTopBar() {
     serverStatusEl.classList.remove("connected", "disconnected");
   }
 
-  if (localhostUrlEl) {
-    localhostUrlEl.textContent = "Localhost URL: Checking...";
+  if (driftUrlEl) {
+    driftUrlEl.textContent = "DRIFT Proxy: Checking...";
+  }
+
+  if (proxiedPortEl) {
+    proxiedPortEl.textContent = "Forwarding: Checking...";
   }
 
   if (zrokUrlEl) {
